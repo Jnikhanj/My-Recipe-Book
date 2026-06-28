@@ -4,7 +4,8 @@ const importFile = document.getElementById("importFile");
 
 const DB_NAME = "recipeKeeperLocalDB";
 const DB_VERSION = 1;
-const SETTINGS_KEY = "recipeKeeperSettingsV4";
+const SETTINGS_KEY = "recipeKeeperSettingsV5";
+const LEGACY_SETTINGS_KEY = "recipeKeeperSettingsV4";
 
 const DEFAULT_LABELS = ["Indian", "Main", "Appetizer", "Dessert", "Quick", "Breakfast", "Lunch", "Dinner", "Drinks"];
 const PLATES = [
@@ -47,6 +48,8 @@ const state = {
   formPhoto: "",
   formIngredients: [],
   formSteps: [],
+  reorderIngredients: false,
+  reorderSteps: false,
   portionView: {},
   settings: loadSettings(),
 };
@@ -60,7 +63,7 @@ function uid() {
 
 function loadSettings() {
   try {
-    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || localStorage.getItem(LEGACY_SETTINGS_KEY) || "{}");
     return { theme: saved.theme || "warm" };
   } catch (_) {
     return { theme: "warm" };
@@ -217,7 +220,7 @@ function icon(name) {
     heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>',
     plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 5v14M5 12h14"/></svg>',
     list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>',
-    settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05a2.1 2.1 0 1 1-2.97 2.97l-.05-.05A1.8 1.8 0 0 0 15 19.4a1.8 1.8 0 0 0-1 .6 1.8 1.8 0 0 0-.5 1.25V21a2.1 2.1 0 1 1-4.2 0v-.1A1.8 1.8 0 0 0 8 19.4a1.8 1.8 0 0 0-1.98.36l-.05.05A2.1 2.1 0 1 1 3 16.84l.05-.05A1.8 1.8 0 0 0 3.6 15a1.8 1.8 0 0 0-.6-1 1.8 1.8 0 0 0-1.25-.5H1.7a2.1 2.1 0 1 1 0-4.2h.1A1.8 1.8 0 0 0 3.6 8a1.8 1.8 0 0 0-.36-1.98L3.2 5.97A2.1 2.1 0 1 1 6.16 3l.05.05A1.8 1.8 0 0 0 8 3.6a1.8 1.8 0 0 0 1-.6 1.8 1.8 0 0 0 .5-1.25V1.7a2.1 2.1 0 1 1 4.2 0v.1A1.8 1.8 0 0 0 15 3.6a1.8 1.8 0 0 0 1.98-.36l.05-.05A2.1 2.1 0 1 1 20 6.16l-.05.05A1.8 1.8 0 0 0 19.4 8c.2.4.4.7.6 1 .32.32.78.5 1.25.5h.05a2.1 2.1 0 1 1 0 4.2h-.1A1.8 1.8 0 0 0 19.4 15Z"/></svg>',
+    settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.05" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h7"/><path d="M15 6h5"/><circle cx="13" cy="6" r="2"/><path d="M4 12h3"/><path d="M11 12h9"/><circle cx="9" cy="12" r="2"/><path d="M4 18h10"/><path d="M18 18h2"/><circle cx="16" cy="18" r="2"/></svg>',
     search: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
     back: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18 9 12l6-6"/></svg>',
     close: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>',
@@ -297,6 +300,12 @@ function shouldScale(item) {
   if (String(item.unit || "").toLowerCase() === "to taste") return false;
   if (/to taste|as required|garnish/i.test(`${item.amount || ""} ${item.unit || ""} ${item.note || ""}`)) return false;
   return parseAmountNumber(item.amount) !== null;
+}
+
+function shouldShowNotScaled(item) {
+  if (item.scalable !== false) return false;
+  const text = `${item.amount || ""} ${item.unit || ""} ${item.note || ""}`.trim();
+  return Boolean(text && (/to taste|as required|garnish|optional/i.test(text) || parseAmountNumber(item.amount) !== null));
 }
 
 function scaleIngredient(item, factor = 1) {
@@ -562,6 +571,8 @@ function renderForm(id = null) {
   state.formPhoto = recipe?.photo || "";
   state.formIngredients = getRecipeIngredients(recipe || {});
   state.formSteps = getRecipeSteps(recipe || {});
+  state.reorderIngredients = false;
+  state.reorderSteps = false;
   const previewRecipe = { name: recipe?.name || "New Dish", emoji: recipe?.emoji || "🍽️", plate, photo: state.formPhoto };
   app.innerHTML = `
     <section class="app-shell form-shell">
@@ -603,7 +614,10 @@ function renderForm(id = null) {
         <div class="builder-card" id="ingredientBuilder">
           <div class="builder-head compact-builder-head">
             <div class="section-title mini">Ingredients</div>
-            <button type="button" class="mini-link" data-action="toggle-paste" data-target="ingredientPasteBox">Quick paste</button>
+            <div class="builder-actions">
+              <button type="button" class="mini-link" data-action="toggle-paste" data-target="ingredientPasteBox">Quick paste</button>
+              <button type="button" id="ingredientReorderToggle" class="mini-link" data-action="toggle-ingredient-reorder">Reorder</button>
+            </div>
           </div>
           <div id="ingredientPasteBox" class="paste-box hidden">
             <textarea id="ingredientPasteInput" placeholder="Paste ingredients, one per line&#10;500g chicken&#10;1/2 cup yoghurt&#10;Salt to taste"></textarea>
@@ -639,7 +653,10 @@ function renderForm(id = null) {
         <div class="builder-card">
           <div class="builder-head compact-builder-head">
             <div class="section-title mini">Method</div>
-            <button type="button" class="mini-link" data-action="toggle-paste" data-target="methodPasteBox">Quick paste</button>
+            <div class="builder-actions">
+              <button type="button" class="mini-link" data-action="toggle-paste" data-target="methodPasteBox">Quick paste</button>
+              <button type="button" id="stepReorderToggle" class="mini-link" data-action="toggle-step-reorder">Reorder</button>
+            </div>
           </div>
           <div id="methodPasteBox" class="paste-box hidden">
             <textarea id="methodPasteInput" placeholder="Paste method steps, one per line"></textarea>
@@ -705,37 +722,118 @@ function renderIngredientSuggestions() {
 function renderIngredientList() {
   const list = document.getElementById("ingredientList");
   if (!list) return;
-  list.innerHTML = state.formIngredients.length ? state.formIngredients.map((item, index) => `
-    <div class="builder-row movable-row">
-      <div class="move-controls" aria-label="Move ingredient">
-        <button type="button" data-action="move-ingredient" data-index="${index}" data-dir="-1" ${index === 0 ? "disabled" : ""}>↑</button>
-        <button type="button" data-action="move-ingredient" data-index="${index}" data-dir="1" ${index === state.formIngredients.length - 1 ? "disabled" : ""}>↓</button>
+  const toggle = document.getElementById("ingredientReorderToggle");
+  if (toggle) {
+    toggle.textContent = state.reorderIngredients ? "Done" : "Reorder";
+    toggle.classList.toggle("active", state.reorderIngredients);
+    toggle.disabled = state.formIngredients.length < 2;
+  }
+  list.classList.toggle("reorder-active", state.reorderIngredients);
+  if (!state.formIngredients.length) {
+    list.innerHTML = `<div class="empty-inline">No ingredients added yet.</div>`;
+    return;
+  }
+  list.innerHTML = state.formIngredients.map((item, index) => {
+    const notScaled = shouldShowNotScaled(item);
+    if (state.reorderIngredients) {
+      return `
+        <div class="builder-row reorder-row" data-sort-type="ingredient" data-index="${index}">
+          <button type="button" class="drag-handle" data-drag-handle="ingredient" data-index="${index}" aria-label="Drag ${h(item.name)}">☰</button>
+          <div class="row-main reorder-main"><b>${h(formatIngredient(item))}</b>${notScaled ? `<small class="row-tag">Not scaled</small>` : ""}</div>
+        </div>
+      `;
+    }
+    return `
+      <div class="builder-row clean-row">
+        <button type="button" class="row-main" data-action="edit-ingredient" data-index="${index}">
+          <b>${h(formatIngredient(item))}</b>
+          ${notScaled ? `<small class="row-tag">Not scaled</small>` : ""}
+        </button>
+        <button type="button" class="row-delete" data-action="remove-ingredient" data-index="${index}" aria-label="Remove ${h(item.name)}">×</button>
       </div>
-      <button type="button" class="row-main" data-action="edit-ingredient" data-index="${index}">
-        <b>${h(formatIngredient(item))}</b>
-        <small>${item.scalable === false ? "Does not scale" : "Scales with portions"}${item.note ? ` · ${h(item.note)}` : ""}</small>
-      </button>
-      <button type="button" class="row-delete" data-action="remove-ingredient" data-index="${index}" aria-label="Remove ${h(item.name)}">×</button>
-    </div>
-  `).join("") : `<div class="empty-inline">No ingredients added yet.</div>`;
+    `;
+  }).join("");
+  attachSortableRows("ingredientList", "ingredient");
 }
 
 function renderStepList() {
   const list = document.getElementById("stepList");
   if (!list) return;
-  list.innerHTML = state.formSteps.length ? state.formSteps.map((step, index) => `
-    <div class="builder-row step-row movable-row">
-      <div class="move-controls" aria-label="Move step">
-        <button type="button" data-action="move-step" data-index="${index}" data-dir="-1" ${index === 0 ? "disabled" : ""}>↑</button>
-        <button type="button" data-action="move-step" data-index="${index}" data-dir="1" ${index === state.formSteps.length - 1 ? "disabled" : ""}>↓</button>
+  const toggle = document.getElementById("stepReorderToggle");
+  if (toggle) {
+    toggle.textContent = state.reorderSteps ? "Done" : "Reorder";
+    toggle.classList.toggle("active", state.reorderSteps);
+    toggle.disabled = state.formSteps.length < 2;
+  }
+  list.classList.toggle("reorder-active", state.reorderSteps);
+  if (!state.formSteps.length) {
+    list.innerHTML = `<div class="empty-inline">No method steps added yet.</div>`;
+    return;
+  }
+  list.innerHTML = state.formSteps.map((step, index) => {
+    if (state.reorderSteps) {
+      return `
+        <div class="builder-row reorder-row step-row" data-sort-type="step" data-index="${index}">
+          <button type="button" class="drag-handle" data-drag-handle="step" data-index="${index}" aria-label="Drag step ${index + 1}">☰</button>
+          <div class="row-main reorder-main"><span class="step-number">${index + 1}</span><b>${h(step)}</b></div>
+        </div>
+      `;
+    }
+    return `
+      <div class="builder-row clean-row step-row">
+        <button type="button" class="row-main" data-action="edit-step" data-index="${index}">
+          <span class="step-number">${index + 1}</span>
+          <b>${h(step)}</b>
+        </button>
+        <button type="button" class="row-delete" data-action="remove-step" data-index="${index}" aria-label="Remove step ${index + 1}">×</button>
       </div>
-      <button type="button" class="row-main" data-action="edit-step" data-index="${index}">
-        <span class="step-number">${index + 1}</span>
-        <b>${h(step)}</b>
-      </button>
-      <button type="button" class="row-delete" data-action="remove-step" data-index="${index}" aria-label="Remove step ${index + 1}">×</button>
-    </div>
-  `).join("") : `<div class="empty-inline">No method steps added yet.</div>`;
+    `;
+  }).join("");
+  attachSortableRows("stepList", "step");
+}
+
+function attachSortableRows(listId, type) {
+  const list = document.getElementById(listId);
+  if (!list) return;
+  list.querySelectorAll(`[data-drag-handle="${type}"]`).forEach(handle => {
+    handle.addEventListener("pointerdown", event => startSortDrag(event, type));
+  });
+}
+
+function startSortDrag(event, type) {
+  const handle = event.currentTarget;
+  const fromIndex = Number(handle.dataset.index);
+  const list = handle.closest(".ingredient-list, .step-list");
+  if (!list || !Number.isFinite(fromIndex)) return;
+  event.preventDefault();
+  handle.setPointerCapture?.(event.pointerId);
+  document.body.classList.add("sorting");
+  const startRow = handle.closest("[data-sort-type]");
+  startRow?.classList.add("dragging");
+  let overIndex = fromIndex;
+
+  const clearOver = () => list.querySelectorAll(".drag-over").forEach(row => row.classList.remove("drag-over"));
+  const onMove = moveEvent => {
+    const el = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY)?.closest(`[data-sort-type="${type}"]`);
+    if (!el || !list.contains(el)) return;
+    clearOver();
+    el.classList.add("drag-over");
+    overIndex = Number(el.dataset.index);
+  };
+  const onEnd = () => {
+    document.removeEventListener("pointermove", onMove);
+    document.removeEventListener("pointerup", onEnd);
+    document.removeEventListener("pointercancel", onEnd);
+    document.body.classList.remove("sorting");
+    clearOver();
+    const array = type === "ingredient" ? state.formIngredients : state.formSteps;
+    moveItemInArray(array, fromIndex, overIndex);
+    if (type === "ingredient") renderIngredientList();
+    else renderStepList();
+  };
+  document.addEventListener("pointermove", onMove);
+  document.addEventListener("pointerup", onEnd, { once: true });
+  document.addEventListener("pointercancel", onEnd, { once: true });
 }
 
 function addIngredientFromFields() {
@@ -791,10 +889,14 @@ function addStepFromField() {
   return true;
 }
 
-function moveInArray(array, index, dir) {
-  const newIndex = index + dir;
-  if (newIndex < 0 || newIndex >= array.length) return;
-  [array[index], array[newIndex]] = [array[newIndex], array[index]];
+function moveItemInArray(array, fromIndex, toIndex) {
+  if (!Array.isArray(array)) return;
+  const from = Number(fromIndex);
+  const to = Number(toIndex);
+  if (!Number.isFinite(from) || !Number.isFinite(to) || from === to) return;
+  if (from < 0 || from >= array.length || to < 0 || to >= array.length) return;
+  const [item] = array.splice(from, 1);
+  array.splice(to, 0, item);
 }
 
 function importPastedIngredients() {
@@ -1037,7 +1139,7 @@ function exportData(includePhotos = true) {
   const recipes = state.recipes.map(recipe => includePhotos ? recipe : { ...recipe, photo: "" });
   downloadJson(`recipe-keeper-${includePhotos ? "full" : "text"}-${new Date().toISOString().slice(0, 10)}.json`, {
     app: "Recipe Keeper",
-    version: 4,
+    version: 5,
     exportedAt: new Date().toISOString(),
     includesPhotos: includePhotos,
     settings: state.settings,
@@ -1155,8 +1257,8 @@ app.addEventListener("click", async event => {
   }
   if (action === "toggle-paste") document.getElementById(targetId)?.classList.toggle("hidden");
   if (action === "add-ingredient") addIngredientFromFields();
+  if (action === "toggle-ingredient-reorder") { state.reorderIngredients = !state.reorderIngredients; renderIngredientList(); }
   if (action === "remove-ingredient") { state.formIngredients.splice(Number(index), 1); renderIngredientList(); }
-  if (action === "move-ingredient") { moveInArray(state.formIngredients, Number(index), Number(dir)); renderIngredientList(); }
   if (action === "edit-ingredient") {
     const item = state.formIngredients.splice(Number(index), 1)[0];
     document.getElementById("ingredientNameInput").value = item.name || "";
@@ -1169,8 +1271,8 @@ app.addEventListener("click", async event => {
   }
   if (action === "import-ingredients") importPastedIngredients();
   if (action === "add-step") addStepFromField();
+  if (action === "toggle-step-reorder") { state.reorderSteps = !state.reorderSteps; renderStepList(); }
   if (action === "remove-step") { state.formSteps.splice(Number(index), 1); renderStepList(); }
-  if (action === "move-step") { moveInArray(state.formSteps, Number(index), Number(dir)); renderStepList(); }
   if (action === "edit-step") {
     const step = state.formSteps.splice(Number(index), 1)[0];
     document.getElementById("methodStepInput").value = step;
