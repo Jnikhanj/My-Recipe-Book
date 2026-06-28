@@ -41,13 +41,13 @@ A local-first visual recipe app for iPhone Safari, designed to be hosted free on
 
 ## Updating an existing GitHub Pages app
 
-Replace the existing files in your repository with these updated files. The service worker cache name has been updated to `recipe-keeper-v3`, so Safari should refresh the app after the new files are deployed. If the old screen still appears, close the app, reopen the Safari URL, refresh once, then open it from the Home Screen again.
+Replace the existing files in your repository with these updated files. The service worker cache name has been updated to `recipe-keeper-v4`, so Safari should refresh the app after the new files are deployed. If the old screen still appears, close the app, reopen the Safari URL, refresh once, then open it from the Home Screen again.
 
 ## Important backup note
 
-Recipes are stored locally in Safari on the device. GitHub only hosts the app files. Export a backup regularly from the Backup screen, especially before clearing Safari website data or changing phones.
+Recipes are stored locally in Safari on the device. GitHub only hosts the app files. Export a backup regularly from Settings, especially before clearing Safari website data or changing phones.
 
-## v3 refinement notes
+## v4 refinement notes
 
 - Prep time removed; cook time now sits beside cuisine.
 - Recipe detail plate reduced in size.
@@ -56,3 +56,15 @@ Recipes are stored locally in Safari on the device. GitHub only hosts the app fi
 - Sort control now uses a clean SVG icon instead of emoji/text.
 - Ingredient and method helper wording removed for a cleaner add screen.
 - Overall spacing, chip size and visual density have been tightened.
+
+
+## Version 4 refinements
+
+- Added functional portion scaling. Each recipe stores the original number of portions and the recipe view can scale ingredients up or down.
+- Ingredient amounts support decimals and fractions such as `1/4`, `1/2`, `3/4`, and `1 1/2`.
+- Shopping list generation uses the currently selected portion size.
+- Ingredients and method steps can be reordered using up/down controls.
+- Added a Scale toggle for ingredients that should not change with portions, such as salt to taste, garnish, and oil as required.
+- Replaced Backup tab with Settings.
+- Added theme customisation under Settings.
+- Backup and restore remain available inside Settings.

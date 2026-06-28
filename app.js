@@ -4,9 +4,11 @@ const importFile = document.getElementById("importFile");
 
 const DB_NAME = "recipeKeeperLocalDB";
 const DB_VERSION = 1;
+const SETTINGS_KEY = "recipeKeeperSettingsV4";
+
 const DEFAULT_LABELS = ["Indian", "Main", "Appetizer", "Dessert", "Quick", "Breakfast", "Lunch", "Dinner", "Drinks"];
 const PLATES = [
-  { id: "none", label: "None" },
+  { id: "none", label: "Plain" },
   { id: "checker", label: "Checker" },
   { id: "peach", label: "Peach dots" },
   { id: "blueflower", label: "Blue flower" },
@@ -16,6 +18,14 @@ const PLATES = [
   { id: "greenrim", label: "Green rim" },
 ];
 const UNITS = ["", "g", "kg", "ml", "L", "tsp", "tbsp", "cup", "piece", "pinch", "clove", "inch", "bunch", "packet", "can", "to taste"];
+const AMOUNT_CHIPS = ["1/4", "1/2", "3/4", "1", "1 1/2", "2"];
+const THEMES = [
+  { id: "warm", name: "Warm Cookbook", note: "Current orange and cream look" },
+  { id: "cream", name: "Clean Cream", note: "Lighter and minimal" },
+  { id: "sage", name: "Sage Green", note: "Soft green kitchen style" },
+  { id: "porcelain", name: "Blue Porcelain", note: "White and blue plate style" },
+  { id: "dark", name: "Dark Kitchen", note: "Low-light cooking mode" },
+];
 const COMMON_INGREDIENTS = [
   "Chicken", "Chicken breast", "Chicken thigh", "Egg", "Fish", "Prawns", "Paneer", "Tofu",
   "Onion", "Red onion", "Tomato", "Potato", "Carrot", "Capsicum", "Spinach", "Coriander", "Mint",
@@ -37,6 +47,8 @@ const state = {
   formPhoto: "",
   formIngredients: [],
   formSteps: [],
+  portionView: {},
+  settings: loadSettings(),
 };
 
 let dbPromise;
@@ -44,6 +56,24 @@ let toastTimer;
 
 function uid() {
   return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function loadSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+    return { theme: saved.theme || "warm" };
+  } catch (_) {
+    return { theme: "warm" };
+  }
+}
+
+function saveSettings() {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings));
+  applyTheme();
+}
+
+function applyTheme() {
+  document.body.dataset.theme = state.settings.theme || "warm";
 }
 
 function openDb() {
@@ -124,16 +154,16 @@ async function seedDemoRecipes() {
   const now = new Date().toISOString();
   const demos = [
     {
-      name: "Butter Chicken", labels: ["Indian", "Dinner", "Main"], cuisine: "Indian", prep: "20 min", cook: "40 min", emoji: "🍛", plate: "checker", cookedCount: 2,
+      name: "Butter Chicken", labels: ["Indian", "Dinner", "Main"], cuisine: "Indian", cook: "40 min", emoji: "🍛", plate: "checker", cookedCount: 2, portions: 2,
       ingredientsList: [
-        { amount: "500", unit: "g", name: "Chicken", note: "boneless" },
-        { amount: "1", unit: "cup", name: "Yoghurt", note: "" },
-        { amount: "2", unit: "piece", name: "Onion", note: "finely chopped" },
-        { amount: "1", unit: "cup", name: "Tomato puree", note: "" },
-        { amount: "2", unit: "tbsp", name: "Butter", note: "" },
-        { amount: "1", unit: "tsp", name: "Garam masala", note: "" },
-        { amount: "", unit: "", name: "Cream", note: "to finish" },
-        { amount: "", unit: "", name: "Fresh coriander", note: "garnish" },
+        { amount: "500", unit: "g", name: "Chicken", note: "boneless", scalable: true },
+        { amount: "1/2", unit: "cup", name: "Yoghurt", note: "", scalable: true },
+        { amount: "1", unit: "piece", name: "Onion", note: "finely chopped", scalable: true },
+        { amount: "1", unit: "cup", name: "Tomato puree", note: "", scalable: true },
+        { amount: "1", unit: "tbsp", name: "Butter", note: "", scalable: true },
+        { amount: "1", unit: "tsp", name: "Garam masala", note: "", scalable: true },
+        { amount: "", unit: "to taste", name: "Salt", note: "", scalable: false },
+        { amount: "", unit: "", name: "Fresh coriander", note: "garnish", scalable: false },
       ],
       methodSteps: [
         "Marinate chicken with yoghurt and spices.",
@@ -143,18 +173,19 @@ async function seedDemoRecipes() {
       ],
       notes: "Use less chilli if cooking for family."
     },
-    { name: "Egg Fried Rice", labels: ["Quick", "Lunch"], cuisine: "Chinese", prep: "10 min", cook: "15 min", emoji: "🍚", plate: "blueflower", cookedCount: 1, ingredients: "Cooked rice\n2 eggs\nSoy sauce\nSpring onion\nMixed vegetables", method: "Scramble eggs.\nStir fry vegetables.\nAdd rice and soy sauce.\nMix eggs through and serve hot." },
-    { name: "Masala Chai", labels: ["Drinks", "Indian", "Quick"], cuisine: "Indian", prep: "2 min", cook: "8 min", emoji: "☕", plate: "greenrim", cookedCount: 5, ingredients: "Water\nMilk\nTea leaves\nGinger\nCardamom\nSugar", method: "Boil water with ginger and cardamom.\nAdd tea leaves and milk.\nSimmer, strain and serve." },
-    { name: "Chole", labels: ["Indian", "Main", "Dinner"], cuisine: "Indian", prep: "15 min", cook: "45 min", emoji: "🥘", plate: "redpolka", cookedCount: 3, ingredients: "Chickpeas\nOnion\nTomato\nGinger garlic paste\nChole masala\nCoriander", method: "Cook onion and tomato masala.\nAdd chickpeas and spices.\nSimmer until thick." },
-    { name: "Mango Sticky Rice", labels: ["Dessert"], cuisine: "Thai", prep: "15 min", cook: "25 min", emoji: "🥭", plate: "navystripe", cookedCount: 0, ingredients: "Sticky rice\nCoconut milk\nSugar\nSalt\nMango", method: "Steam sticky rice.\nWarm coconut milk with sugar and salt.\nMix with rice and serve with mango." },
-    { name: "Aloo Paratha", labels: ["Indian", "Breakfast"], cuisine: "Indian", prep: "25 min", cook: "20 min", emoji: "🫓", plate: "peach", cookedCount: 4, ingredients: "Wheat flour\nPotato\nCumin\nCoriander\nGreen chilli\nGhee", method: "Prepare dough and potato filling.\nRoll, fill and cook on tawa with ghee." },
+    { name: "Egg Fried Rice", labels: ["Quick", "Lunch"], cuisine: "Chinese", cook: "15 min", emoji: "🍚", plate: "blueflower", cookedCount: 1, portions: 2, ingredients: "2 cup cooked rice\n2 eggs\n1 tbsp soy sauce\n1 spring onion\n1 cup mixed vegetables", method: "Scramble eggs.\nStir fry vegetables.\nAdd rice and soy sauce.\nMix eggs through and serve hot." },
+    { name: "Masala Chai", labels: ["Drinks", "Indian", "Quick"], cuisine: "Indian", cook: "8 min", emoji: "☕", plate: "greenrim", cookedCount: 5, portions: 2, ingredients: "1 cup water\n1 cup milk\n2 tsp tea leaves\n1/2 inch ginger\n2 cardamom\nSugar to taste", method: "Boil water with ginger and cardamom.\nAdd tea leaves and milk.\nSimmer, strain and serve." },
+    { name: "Chole", labels: ["Indian", "Main", "Dinner"], cuisine: "Indian", cook: "45 min", emoji: "🥘", plate: "redpolka", cookedCount: 3, portions: 3, ingredients: "2 cup chickpeas\n1 onion\n2 tomato\n1 tbsp ginger garlic paste\n2 tsp chole masala\nCoriander garnish", method: "Cook onion and tomato masala.\nAdd chickpeas and spices.\nSimmer until thick." },
+    { name: "Mango Sticky Rice", labels: ["Dessert"], cuisine: "Thai", cook: "25 min", emoji: "🥭", plate: "navystripe", cookedCount: 0, portions: 2, ingredients: "1 cup sticky rice\n1 cup coconut milk\n2 tbsp sugar\nSalt to taste\n1 mango", method: "Steam sticky rice.\nWarm coconut milk with sugar and salt.\nMix with rice and serve with mango." },
+    { name: "Aloo Paratha", labels: ["Indian", "Breakfast"], cuisine: "Indian", cook: "20 min", emoji: "🫓", plate: "peach", cookedCount: 4, portions: 4, ingredients: "2 cup wheat flour\n3 potato\n1 tsp cumin\nCoriander garnish\n1 green chilli\nGhee as required", method: "Prepare dough and potato filling.\nRoll, fill and cook on tawa with ghee." },
   ];
   for (const demo of demos) {
-    const ingredientsList = demo.ingredientsList || lineArray(demo.ingredients).map(parseIngredientLine);
+    const ingredientsList = normaliseIngredients(demo.ingredientsList || lineArray(demo.ingredients).map(parseIngredientLine));
     const methodSteps = demo.methodSteps || lineArray(demo.method);
     await putItem("recipes", {
       id: uid(), photo: "", favorite: demo.cookedCount > 2, createdAt: now, updatedAt: now, lastCooked: "", notes: "",
-      shape: "circle", serves: "", ...demo,
+      shape: "circle", prep: "", ...demo,
+      portions: normalisePortions(demo.portions || 2),
       ingredientsList,
       methodSteps,
       ingredients: ingredientsList.map(formatIngredient).join("\n"),
@@ -186,7 +217,7 @@ function icon(name) {
     heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>',
     plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 5v14M5 12h14"/></svg>',
     list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>',
-    backup: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 5 6v6c0 4.4 3 7.6 7 9 4-1.4 7-4.6 7-9V6l-7-3Z"/><path d="m9 12 2 2 4-5"/></svg>',
+    settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05a2.1 2.1 0 1 1-2.97 2.97l-.05-.05A1.8 1.8 0 0 0 15 19.4a1.8 1.8 0 0 0-1 .6 1.8 1.8 0 0 0-.5 1.25V21a2.1 2.1 0 1 1-4.2 0v-.1A1.8 1.8 0 0 0 8 19.4a1.8 1.8 0 0 0-1.98.36l-.05.05A2.1 2.1 0 1 1 3 16.84l.05-.05A1.8 1.8 0 0 0 3.6 15a1.8 1.8 0 0 0-.6-1 1.8 1.8 0 0 0-1.25-.5H1.7a2.1 2.1 0 1 1 0-4.2h.1A1.8 1.8 0 0 0 3.6 8a1.8 1.8 0 0 0-.36-1.98L3.2 5.97A2.1 2.1 0 1 1 6.16 3l.05.05A1.8 1.8 0 0 0 8 3.6a1.8 1.8 0 0 0 1-.6 1.8 1.8 0 0 0 .5-1.25V1.7a2.1 2.1 0 1 1 4.2 0v.1A1.8 1.8 0 0 0 15 3.6a1.8 1.8 0 0 0 1.98-.36l.05-.05A2.1 2.1 0 1 1 20 6.16l-.05.05A1.8 1.8 0 0 0 19.4 8c.2.4.4.7.6 1 .32.32.78.5 1.25.5h.05a2.1 2.1 0 1 1 0 4.2h-.1A1.8 1.8 0 0 0 19.4 15Z"/></svg>',
     search: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
     back: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18 9 12l6-6"/></svg>',
     close: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>',
@@ -202,23 +233,9 @@ function lineArray(text) {
   return String(text || "").split(/\n+/).map(x => x.replace(/^[-•*\d.)\s]+/, "").trim()).filter(Boolean);
 }
 
-function parseIngredientLine(line) {
-  const clean = String(line || "").replace(/^[-•*\d.)\s]+/, "").trim();
-  if (!clean) return { amount: "", unit: "", name: "", note: "" };
-  if (/salt\s+to\s+taste/i.test(clean)) return { amount: "", unit: "to taste", name: "Salt", note: "" };
-  const match = clean.match(/^(\d+(?:[./]\d+)?|\d+\s*\/\s*\d+|½|¼|¾|⅓|⅔)?\s*(g|kg|ml|l|tsp|tbsp|cup|cups|piece|pieces|pinch|clove|cloves|inch|bunch|packet|packets|can|cans)?\s+(.+)$/i);
-  if (match && (match[1] || match[2])) {
-    const unit = normaliseUnit(match[2] || "");
-    const rest = match[3].trim();
-    const noteMatch = rest.match(/^(.+?)(?:,\s*|\s+-\s+|\s+\()(.+?)\)?$/);
-    return { amount: (match[1] || "").replace(/\s+/g, ""), unit, name: titleCase((noteMatch ? noteMatch[1] : rest).trim()), note: noteMatch ? noteMatch[2].trim() : "" };
-  }
-  return { amount: "", unit: "", name: titleCase(clean), note: "" };
-}
-
 function normaliseUnit(unit) {
   const u = String(unit || "").trim().toLowerCase();
-  const map = { l: "L", cups: "cup", pieces: "piece", cloves: "clove", packets: "packet", cans: "can" };
+  const map = { l: "L", cups: "cup", pieces: "piece", cloves: "clove", packets: "packet", cans: "can", teaspoons: "tsp", tablespoon: "tbsp", tablespoons: "tbsp" };
   return map[u] || u;
 }
 
@@ -226,11 +243,106 @@ function titleCase(value) {
   return String(value || "").trim().replace(/\s+/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
 
-function getRecipeIngredients(recipe) {
-  if (Array.isArray(recipe?.ingredientsList) && recipe.ingredientsList.length) {
-    return recipe.ingredientsList.map(item => ({ amount: item.amount || "", unit: item.unit || "", name: item.name || "", note: item.note || "" })).filter(item => item.name);
+function unicodeFractionsToText(value) {
+  return String(value || "")
+    .replace(/¼/g, "1/4").replace(/½/g, "1/2").replace(/¾/g, "3/4")
+    .replace(/⅓/g, "1/3").replace(/⅔/g, "2/3")
+    .replace(/⅛/g, "1/8").replace(/⅜/g, "3/8").replace(/⅝/g, "5/8").replace(/⅞/g, "7/8");
+}
+
+function parseAmountNumber(value) {
+  const text = unicodeFractionsToText(value).trim();
+  if (!text) return null;
+  if (/^\d+(?:\.\d+)?$/.test(text)) return Number(text);
+  const mixed = text.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)$/);
+  if (mixed) return Number(mixed[1]) + Number(mixed[2]) / Number(mixed[3]);
+  const frac = text.match(/^(\d+)\s*\/\s*(\d+)$/);
+  if (frac) return Number(frac[1]) / Number(frac[2]);
+  return null;
+}
+
+function gcd(a, b) {
+  while (b) [a, b] = [b, a % b];
+  return Math.abs(a || 1);
+}
+
+function formatAmountNumber(value, unit = "") {
+  if (!Number.isFinite(value)) return "";
+  const lowerUnit = String(unit || "").toLowerCase();
+  if (["g", "ml"].includes(lowerUnit)) return String(Math.round(value));
+  if (["kg", "l"].includes(lowerUnit)) {
+    const rounded = Math.round(value * 100) / 100;
+    return Number.isInteger(rounded) ? String(rounded) : String(rounded).replace(/\.0+$/, "");
   }
-  return lineArray(recipe?.ingredients).map(parseIngredientLine).filter(item => item.name);
+  const whole = Math.floor(value + 1e-9);
+  const decimal = value - whole;
+  const denominator = 8;
+  let numerator = Math.round(decimal * denominator);
+  if (numerator === 0) return String(whole);
+  if (numerator === denominator) return String(whole + 1);
+  const divisor = gcd(numerator, denominator);
+  numerator /= divisor;
+  const den = denominator / divisor;
+  return whole > 0 ? `${whole} ${numerator}/${den}` : `${numerator}/${den}`;
+}
+
+function normalisePortions(value) {
+  const n = Math.max(1, Math.min(99, Math.round(Number(value) || 2)));
+  return n;
+}
+
+function shouldScale(item) {
+  if (item.scalable === false) return false;
+  if (!String(item.amount || "").trim()) return false;
+  if (String(item.unit || "").toLowerCase() === "to taste") return false;
+  if (/to taste|as required|garnish/i.test(`${item.amount || ""} ${item.unit || ""} ${item.note || ""}`)) return false;
+  return parseAmountNumber(item.amount) !== null;
+}
+
+function scaleIngredient(item, factor = 1) {
+  const base = { ...item };
+  if (!shouldScale(base) || factor === 1) return base;
+  const amount = parseAmountNumber(base.amount);
+  base.amount = formatAmountNumber(amount * factor, base.unit);
+  return base;
+}
+
+function parseIngredientLine(line) {
+  const clean = unicodeFractionsToText(String(line || "").replace(/^[-•*\d.)\s]+/, "").trim());
+  if (!clean) return { amount: "", unit: "", name: "", note: "", scalable: true };
+  if (/^salt\s+to\s+taste$/i.test(clean)) return { amount: "", unit: "to taste", name: "Salt", note: "", scalable: false };
+  const unitsPattern = "g|kg|ml|l|L|tsp|tbsp|cup|cups|piece|pieces|pinch|clove|cloves|inch|bunch|packet|packets|can|cans";
+  const amountPattern = "(?:\\d+(?:\\.\\d+)?(?:\\s+\\d+\\s*\\/\\s*\\d+)?|\\d+\\s*\\/\\s*\\d+)";
+  const match = clean.match(new RegExp(`^(${amountPattern})?\\s*(${unitsPattern})?\\s+(.+)$`, "i"));
+  if (match && (match[1] || match[2])) {
+    const amount = (match[1] || "").replace(/\s*\/\s*/g, "/").trim();
+    const unit = normaliseUnit(match[2] || "");
+    const rest = match[3].trim();
+    const noteMatch = rest.match(/^(.+?)(?:,\s*|\s+-\s+|\s+\()(.+?)\)?$/);
+    const item = { amount, unit, name: titleCase((noteMatch ? noteMatch[1] : rest).trim()), note: noteMatch ? noteMatch[2].trim() : "", scalable: true };
+    item.scalable = shouldScale(item);
+    return item;
+  }
+  const toTaste = clean.match(/^(.+?)\s+(to taste|as required)$/i);
+  if (toTaste) return { amount: "", unit: toTaste[2].toLowerCase(), name: titleCase(toTaste[1]), note: "", scalable: false };
+  return { amount: "", unit: "", name: titleCase(clean), note: "", scalable: false };
+}
+
+function normaliseIngredients(items) {
+  return (items || [])
+    .map(item => ({
+      amount: unicodeFractionsToText(item.amount || "").trim(),
+      unit: normaliseUnit(item.unit || ""),
+      name: titleCase(item.name || ""),
+      note: item.note || "",
+      scalable: item.scalable === false ? false : shouldScale({ ...item, scalable: item.scalable }),
+    }))
+    .filter(item => item.name);
+}
+
+function getRecipeIngredients(recipe) {
+  if (Array.isArray(recipe?.ingredientsList) && recipe.ingredientsList.length) return normaliseIngredients(recipe.ingredientsList);
+  return normaliseIngredients(lineArray(recipe?.ingredients).map(parseIngredientLine));
 }
 
 function getRecipeSteps(recipe) {
@@ -244,8 +356,13 @@ function formatIngredient(item) {
   const name = String(item.name || "").trim();
   const note = String(item.note || "").trim();
   if (!name) return "";
+  if (unit === "to taste" && !amount) return `${name} to taste`;
   const qty = [amount, unit].filter(Boolean).join(" ");
   return `${qty ? `${qty} ` : ""}${name}${note ? `, ${note}` : ""}`.trim();
+}
+
+function formatScaledIngredient(item, factor) {
+  return formatIngredient(scaleIngredient(item, factor));
 }
 
 function ingredientSuggestions(query = "") {
@@ -331,7 +448,7 @@ function navHtml(active = state.view) {
       <button class="nav-item ${active === "home" && state.activeLabel === "Favourites" ? "active" : ""}" data-action="favourites">${icon("heart")}<span>Favourites</span></button>
       <button class="add-button" data-action="new" aria-label="Add recipe">${icon("plus")}</button>
       <button class="nav-item ${active === "shopping" ? "active" : ""}" data-action="nav" data-view="shopping">${icon("list")}<span>List</span></button>
-      <button class="nav-item ${active === "backup" ? "active" : ""}" data-action="nav" data-view="backup">${icon("backup")}<span>Backup</span></button>
+      <button class="nav-item ${active === "settings" ? "active" : ""}" data-action="nav" data-view="settings">${icon("settings")}<span>Settings</span></button>
     </nav>
   `;
 }
@@ -358,34 +475,60 @@ function renderHome() {
       ${navHtml("home")}
     </section>
   `;
-  const searchInput = document.getElementById("searchInput");
-  searchInput.addEventListener("input", event => {
+  document.getElementById("searchInput").addEventListener("input", event => {
     state.query = event.target.value;
     document.getElementById("recipeGrid").innerHTML = recipesGridHtml();
   });
+}
+
+function getBasePortions(recipe) {
+  return normalisePortions(recipe.portions || recipe.serves || 2);
+}
+
+function getDisplayPortions(recipe) {
+  return normalisePortions(state.portionView[recipe.id] || getBasePortions(recipe));
+}
+
+function portionFactor(recipe) {
+  return getDisplayPortions(recipe) / getBasePortions(recipe);
 }
 
 function detailHtml(recipe) {
   const labels = (recipe.labels || []).join(" · ");
   const ingredients = getRecipeIngredients(recipe);
   const method = getRecipeSteps(recipe);
+  const portions = getDisplayPortions(recipe);
+  const basePortions = getBasePortions(recipe);
+  const factor = portionFactor(recipe);
   return `
     <section class="app-shell">
       <div class="toolbar">
         <button class="icon-btn" data-action="back-home" aria-label="Back">${icon("back")}</button>
         <div class="toolbar-title">Recipe</div>
-        <button class="icon-btn" data-action="toggle-fav" data-id="${h(recipe.id)}" aria-label="Toggle favourite">${recipe.favorite ? "★" : "☆"}</button>
+        <button class="icon-btn fav-btn" data-action="toggle-fav" data-id="${h(recipe.id)}" aria-label="Toggle favourite">${recipe.favorite ? "★" : "☆"}</button>
       </div>
       ${plateHtml(recipe, "hero")}
       <h2 class="hero-title">${h(recipe.name)}</h2>
       <div class="hero-meta">${h([labels || recipe.cuisine || "Recipe", recipe.cook ? `Cook ${recipe.cook}` : ""].filter(Boolean).join(" · "))}</div>
+      <div class="portion-card">
+        <div>
+          <b>${h(portions)} portion${portions === 1 ? "" : "s"}</b>
+          <small>Original recipe makes ${h(basePortions)}</small>
+        </div>
+        <div class="portion-controls">
+          <button data-action="portion-minus" data-id="${h(recipe.id)}" aria-label="Decrease portions">−</button>
+          <output>${h(portions)}</output>
+          <button data-action="portion-plus" data-id="${h(recipe.id)}" aria-label="Increase portions">+</button>
+        </div>
+        <button class="mini-link reset-portion" data-action="portion-reset" data-id="${h(recipe.id)}" ${portions === basePortions ? "disabled" : ""}>Reset</button>
+      </div>
       <div class="card">
         <div class="section-head">
           <div class="section-title" style="margin:0">Ingredients</div>
           <button class="chip accent" data-action="add-shopping" data-id="${h(recipe.id)}">Add to list</button>
         </div>
         <div class="line-list" style="margin-top:13px">
-          ${ingredients.length ? ingredients.map(item => `<label class="check-row"><input type="checkbox"><span>${h(formatIngredient(item))}</span></label>`).join("") : '<p class="small-muted">No ingredients added yet.</p>'}
+          ${ingredients.length ? ingredients.map(item => `<label class="check-row"><input type="checkbox"><span>${h(formatScaledIngredient(item, factor))}${shouldScale(item) && factor !== 1 ? `<small class="scaled-note">from ${h(formatIngredient(item))}</small>` : ""}</span></label>`).join("") : '<p class="small-muted">No ingredients added yet.</p>'}
         </div>
         <div class="section-title">Method</div>
         ${method.length ? `<ol class="method-list">${method.map(step => `<li>${h(step)}</li>`).join("")}</ol>` : '<p class="small-muted">No method added yet.</p>'}
@@ -445,9 +588,10 @@ function renderForm(id = null) {
           <div class="field-label">Labels</div>
           <div id="labelWrap" class="label-wrap compact-labels">${formLabelsHtml(selectedLabels)}</div>
         </div>
-        <div class="form-section form-grid">
+        <div class="form-section details-grid">
           <div><label for="cuisineInput">Cuisine</label><input id="cuisineInput" placeholder="e.g. Indian" value="${h(recipe?.cuisine || "")}" /></div>
           <div><label for="cookInput">Cook time</label><input id="cookInput" placeholder="40 min" value="${h(recipe?.cook || "")}" /></div>
+          <div><label for="portionInput">Portions</label><div class="mini-stepper"><button type="button" data-action="form-portion-minus">−</button><input id="portionInput" inputmode="numeric" value="${h(getBasePortions(recipe || { portions: 2 }))}" /><button type="button" data-action="form-portion-plus">+</button></div></div>
         </div>
         <div class="form-section">
           <div class="field-label">Plate backdrop</div>
@@ -462,7 +606,7 @@ function renderForm(id = null) {
             <button type="button" class="mini-link" data-action="toggle-paste" data-target="ingredientPasteBox">Quick paste</button>
           </div>
           <div id="ingredientPasteBox" class="paste-box hidden">
-            <textarea id="ingredientPasteInput" placeholder="Paste ingredients, one per line&#10;500g chicken&#10;1 cup yoghurt&#10;Salt to taste"></textarea>
+            <textarea id="ingredientPasteInput" placeholder="Paste ingredients, one per line&#10;500g chicken&#10;1/2 cup yoghurt&#10;Salt to taste"></textarea>
             <button type="button" class="btn full" data-action="import-ingredients">Add pasted ingredients</button>
           </div>
           <div class="ingredient-fields">
@@ -473,7 +617,7 @@ function renderForm(id = null) {
             </div>
             <div>
               <label for="ingredientAmountInput">Amount</label>
-              <input id="ingredientAmountInput" placeholder="500" inputmode="decimal" />
+              <input id="ingredientAmountInput" placeholder="1/2" inputmode="decimal" />
             </div>
             <div>
               <label for="ingredientUnitInput">Unit</label>
@@ -481,9 +625,11 @@ function renderForm(id = null) {
                 ${UNITS.map(unit => `<option value="${h(unit)}">${unit ? h(unit) : "—"}</option>`).join("")}
               </select>
             </div>
+            <label class="scale-toggle"><input id="ingredientScaleInput" type="checkbox" checked /> <span>Scale</span></label>
+            <div class="amount-pills">${AMOUNT_CHIPS.map(amount => `<button type="button" class="amount-chip" data-amount-chip="${h(amount)}">${h(amount)}</button>`).join("")}</div>
             <div class="ingredient-note-field">
               <label for="ingredientNoteInput">Note</label>
-              <input id="ingredientNoteInput" placeholder="chopped, optional" />
+              <input id="ingredientNoteInput" placeholder="chopped, optional, garnish" />
             </div>
           </div>
           <button type="button" class="btn dark full" data-action="add-ingredient">+ Add ingredient</button>
@@ -529,14 +675,10 @@ function updatePreview() {
 function attachFormEvents() {
   document.getElementById("nameInput")?.addEventListener("input", updatePreview);
   document.getElementById("ingredientNameInput")?.addEventListener("input", renderIngredientSuggestions);
-  document.getElementById("ingredientNameInput")?.addEventListener("keydown", event => {
-    if (event.key === "Enter") { event.preventDefault(); addIngredientFromFields(); }
-  });
-  document.getElementById("ingredientAmountInput")?.addEventListener("keydown", event => {
-    if (event.key === "Enter") { event.preventDefault(); addIngredientFromFields(); }
-  });
-  document.getElementById("ingredientNoteInput")?.addEventListener("keydown", event => {
-    if (event.key === "Enter") { event.preventDefault(); addIngredientFromFields(); }
+  ["ingredientNameInput", "ingredientAmountInput", "ingredientNoteInput"].forEach(id => {
+    document.getElementById(id)?.addEventListener("keydown", event => {
+      if (event.key === "Enter") { event.preventDefault(); addIngredientFromFields(); }
+    });
   });
   document.getElementById("photoInput")?.addEventListener("change", async event => {
     const file = event.target.files?.[0];
@@ -564,10 +706,14 @@ function renderIngredientList() {
   const list = document.getElementById("ingredientList");
   if (!list) return;
   list.innerHTML = state.formIngredients.length ? state.formIngredients.map((item, index) => `
-    <div class="builder-row">
+    <div class="builder-row movable-row">
+      <div class="move-controls" aria-label="Move ingredient">
+        <button type="button" data-action="move-ingredient" data-index="${index}" data-dir="-1" ${index === 0 ? "disabled" : ""}>↑</button>
+        <button type="button" data-action="move-ingredient" data-index="${index}" data-dir="1" ${index === state.formIngredients.length - 1 ? "disabled" : ""}>↓</button>
+      </div>
       <button type="button" class="row-main" data-action="edit-ingredient" data-index="${index}">
         <b>${h(formatIngredient(item))}</b>
-        ${item.note ? `<small>${h(item.note)}</small>` : ""}
+        <small>${item.scalable === false ? "Does not scale" : "Scales with portions"}${item.note ? ` · ${h(item.note)}` : ""}</small>
       </button>
       <button type="button" class="row-delete" data-action="remove-ingredient" data-index="${index}" aria-label="Remove ${h(item.name)}">×</button>
     </div>
@@ -578,7 +724,11 @@ function renderStepList() {
   const list = document.getElementById("stepList");
   if (!list) return;
   list.innerHTML = state.formSteps.length ? state.formSteps.map((step, index) => `
-    <div class="builder-row step-row">
+    <div class="builder-row step-row movable-row">
+      <div class="move-controls" aria-label="Move step">
+        <button type="button" data-action="move-step" data-index="${index}" data-dir="-1" ${index === 0 ? "disabled" : ""}>↑</button>
+        <button type="button" data-action="move-step" data-index="${index}" data-dir="1" ${index === state.formSteps.length - 1 ? "disabled" : ""}>↓</button>
+      </div>
       <button type="button" class="row-main" data-action="edit-step" data-index="${index}">
         <span class="step-number">${index + 1}</span>
         <b>${h(step)}</b>
@@ -593,17 +743,20 @@ function addIngredientFromFields() {
   const amountInput = document.getElementById("ingredientAmountInput");
   const unitInput = document.getElementById("ingredientUnitInput");
   const noteInput = document.getElementById("ingredientNoteInput");
+  const scaleInput = document.getElementById("ingredientScaleInput");
   const item = {
-    amount: amountInput.value.trim(),
+    amount: unicodeFractionsToText(amountInput.value.trim()),
     unit: unitInput.value.trim(),
     name: titleCase(nameInput.value.trim()),
     note: noteInput.value.trim(),
+    scalable: Boolean(scaleInput.checked),
   };
   if (!item.name) {
     toast("Ingredient name is required");
     nameInput.focus();
     return false;
   }
+  if (!shouldScale(item)) item.scalable = false;
   const duplicateIndex = state.formIngredients.findIndex(x => x.name.toLowerCase() === item.name.toLowerCase());
   if (duplicateIndex >= 0) {
     const ok = confirm(`${item.name} is already added. Replace the existing ingredient?`);
@@ -616,6 +769,7 @@ function addIngredientFromFields() {
   amountInput.value = "";
   unitInput.value = "";
   noteInput.value = "";
+  scaleInput.checked = true;
   renderIngredientSuggestions();
   renderIngredientList();
   nameInput.focus();
@@ -637,9 +791,15 @@ function addStepFromField() {
   return true;
 }
 
+function moveInArray(array, index, dir) {
+  const newIndex = index + dir;
+  if (newIndex < 0 || newIndex >= array.length) return;
+  [array[index], array[newIndex]] = [array[newIndex], array[index]];
+}
+
 function importPastedIngredients() {
   const input = document.getElementById("ingredientPasteInput");
-  const items = lineArray(input.value).map(parseIngredientLine).filter(item => item.name);
+  const items = normaliseIngredients(lineArray(input.value).map(parseIngredientLine));
   if (!items.length) return toast("Paste at least one ingredient");
   for (const item of items) {
     const existing = state.formIngredients.findIndex(x => x.name.toLowerCase() === item.name.toLowerCase());
@@ -688,15 +848,13 @@ async function saveForm() {
     document.getElementById("nameInput").focus();
     return;
   }
-
   const ingredientDraft = document.getElementById("ingredientNameInput")?.value.trim();
   if (ingredientDraft) addIngredientFromFields();
   const stepDraft = document.getElementById("methodStepInput")?.value.trim();
   if (stepDraft) addStepFromField();
-
   const labels = [...document.querySelectorAll("[data-label-chip].active")].map(btn => btn.dataset.labelChip).filter(Boolean);
   const now = new Date().toISOString();
-  const ingredientsList = state.formIngredients.filter(item => item.name);
+  const ingredientsList = normaliseIngredients(state.formIngredients);
   const methodSteps = state.formSteps.filter(Boolean);
   const recipe = {
     id,
@@ -705,6 +863,7 @@ async function saveForm() {
     cuisine: document.getElementById("cuisineInput").value.trim(),
     prep: "",
     cook: document.getElementById("cookInput").value.trim(),
+    portions: normalisePortions(document.getElementById("portionInput").value),
     serves: "",
     ingredientsList,
     methodSteps,
@@ -724,6 +883,7 @@ async function saveForm() {
   await putItem("recipes", recipe);
   state.recipes = await getAll("recipes");
   state.view = "detail";
+  state.portionView[id] = recipe.portions;
   toast("Recipe saved");
   renderDetail(id);
 }
@@ -760,34 +920,37 @@ function renderShopping() {
   `;
 }
 
-function renderBackup() {
+function renderSettings() {
   app.innerHTML = `
     <section class="app-shell">
       <div class="toolbar">
         <button class="icon-btn" data-action="back-home" aria-label="Back">${icon("back")}</button>
-        <div class="toolbar-title">Backup & restore</div>
+        <div class="toolbar-title">Settings</div>
         <button class="icon-btn" data-action="new" aria-label="Add recipe">+</button>
       </div>
-      <div class="backup-hero">
+      <h3 class="section-title">Appearance</h3>
+      <div class="theme-grid">
+        ${THEMES.map(theme => `<button class="theme-card ${state.settings.theme === theme.id ? "active" : ""}" data-action="set-theme" data-theme="${h(theme.id)}"><span class="theme-swatch theme-${h(theme.id)}"></span><b>${h(theme.name)}</b><small>${h(theme.note)}</small></button>`).join("")}
+      </div>
+      <div class="backup-hero compact-settings-hero">
         <div class="shield">🛡️</div>
         <h2 style="margin:0 0 8px">Your recipes are local</h2>
         <p class="small-muted" style="margin:0">Recipes and photos are stored on this iPhone/iPad browser. Export a backup regularly, especially before clearing Safari website data.</p>
       </div>
-      <h3 class="section-title">Export / backup</h3>
+      <h3 class="section-title">Backup & restore</h3>
       <button class="settings-row" data-action="export-full"><span class="settings-icon">⬇️</span><span><b>Export full backup</b><small>Includes recipes, photos and shopping list</small></span><span>›</span></button>
       <button class="settings-row" data-action="export-text"><span class="settings-icon">📝</span><span><b>Export recipe text only</b><small>Smaller JSON file without photos</small></span><span>›</span></button>
-      <h3 class="section-title">Import / restore</h3>
       <button class="settings-row" data-action="import-backup"><span class="settings-icon">📥</span><span><b>Import backup</b><small>Restore from a JSON backup file</small></span><span>›</span></button>
-      <h3 class="section-title">Other</h3>
+      <h3 class="section-title">Data</h3>
       <button class="settings-row" data-action="clear-recipes"><span class="settings-icon warning">🗑️</span><span><b>Clear all recipes</b><small class="warning">This cannot be undone unless you have a backup</small></span><span>›</span></button>
-      ${navHtml("backup")}
+      ${navHtml("settings")}
     </section>
   `;
 }
 
 function render() {
   if (state.view === "shopping") return renderShopping();
-  if (state.view === "backup") return renderBackup();
+  if (state.view === "settings") return renderSettings();
   return renderHome();
 }
 
@@ -822,7 +985,8 @@ async function markCooked(id) {
 async function addRecipeIngredientsToShopping(id) {
   const recipe = state.recipes.find(r => r.id === id);
   if (!recipe) return;
-  const ingredients = getRecipeIngredients(recipe).map(formatIngredient).filter(Boolean);
+  const factor = portionFactor(recipe);
+  const ingredients = getRecipeIngredients(recipe).map(item => formatScaledIngredient(item, factor)).filter(Boolean);
   if (!ingredients.length) return toast("No ingredients to add");
   const existing = new Set(state.shopping.map(item => item.text.toLowerCase()));
   let added = 0;
@@ -873,9 +1037,10 @@ function exportData(includePhotos = true) {
   const recipes = state.recipes.map(recipe => includePhotos ? recipe : { ...recipe, photo: "" });
   downloadJson(`recipe-keeper-${includePhotos ? "full" : "text"}-${new Date().toISOString().slice(0, 10)}.json`, {
     app: "Recipe Keeper",
-    version: 3,
+    version: 4,
     exportedAt: new Date().toISOString(),
     includesPhotos: includePhotos,
+    settings: state.settings,
     recipes,
     shopping: state.shopping,
   });
@@ -891,6 +1056,10 @@ async function importBackupFile(file) {
     await clearStore("recipes");
     await clearStore("shopping");
   }
+  if (data.settings?.theme) {
+    state.settings.theme = THEMES.some(t => t.id === data.settings.theme) ? data.settings.theme : state.settings.theme;
+    saveSettings();
+  }
   for (const recipe of data.recipes) {
     if (!recipe.name) continue;
     const ingredientsList = getRecipeIngredients(recipe);
@@ -899,6 +1068,8 @@ async function importBackupFile(file) {
       ...recipe,
       id: recipe.id || uid(),
       shape: "circle",
+      prep: "",
+      portions: normalisePortions(recipe.portions || recipe.serves || 2),
       serves: "",
       ingredientsList,
       methodSteps,
@@ -920,7 +1091,7 @@ async function importBackupFile(file) {
 }
 
 app.addEventListener("click", async event => {
-  const target = event.target.closest("[data-action], [data-plate], [data-label-chip], [data-ingredient-suggestion]");
+  const target = event.target.closest("[data-action], [data-plate], [data-label-chip], [data-ingredient-suggestion], [data-amount-chip]");
   if (!target) return;
 
   if (target.dataset.labelChip) {
@@ -934,6 +1105,11 @@ app.addEventListener("click", async event => {
     input.focus();
     return;
   }
+  if (target.dataset.amountChip) {
+    document.getElementById("ingredientAmountInput").value = target.dataset.amountChip;
+    document.getElementById("ingredientUnitInput").focus();
+    return;
+  }
   if (target.dataset.plate) {
     document.getElementById("plateValue").value = target.dataset.plate;
     document.querySelectorAll("[data-plate]").forEach(btn => btn.classList.toggle("active", btn === target));
@@ -941,7 +1117,7 @@ app.addEventListener("click", async event => {
     return;
   }
 
-  const { action, id, view, label, tab, index, target: targetId } = target.dataset;
+  const { action, id, view, label, tab, index, dir, target: targetId, theme } = target.dataset;
   if (action === "open") { state.view = "detail"; renderDetail(id); }
   if (action === "back-home") { state.view = "home"; renderHome(); }
   if (action === "nav") { state.view = view; if (view === "home") state.activeLabel = "All"; render(); }
@@ -955,6 +1131,11 @@ app.addEventListener("click", async event => {
   if (action === "toggle-fav") { await toggleFavourite(id); renderDetail(id); }
   if (action === "mark-cooked") await markCooked(id);
   if (action === "add-shopping") await addRecipeIngredientsToShopping(id);
+  if (action === "portion-minus") { const r = state.recipes.find(x => x.id === id); state.portionView[id] = Math.max(1, getDisplayPortions(r) - 1); renderDetail(id); }
+  if (action === "portion-plus") { const r = state.recipes.find(x => x.id === id); state.portionView[id] = Math.min(99, getDisplayPortions(r) + 1); renderDetail(id); }
+  if (action === "portion-reset") { const r = state.recipes.find(x => x.id === id); state.portionView[id] = getBasePortions(r); renderDetail(id); }
+  if (action === "form-portion-minus") { const input = document.getElementById("portionInput"); input.value = Math.max(1, normalisePortions(input.value) - 1); }
+  if (action === "form-portion-plus") { const input = document.getElementById("portionInput"); input.value = Math.min(99, normalisePortions(input.value) + 1); }
   if (action === "delete-recipe") {
     if (confirm("Delete this recipe?")) {
       await deleteItem("recipes", id);
@@ -975,18 +1156,21 @@ app.addEventListener("click", async event => {
   if (action === "toggle-paste") document.getElementById(targetId)?.classList.toggle("hidden");
   if (action === "add-ingredient") addIngredientFromFields();
   if (action === "remove-ingredient") { state.formIngredients.splice(Number(index), 1); renderIngredientList(); }
+  if (action === "move-ingredient") { moveInArray(state.formIngredients, Number(index), Number(dir)); renderIngredientList(); }
   if (action === "edit-ingredient") {
     const item = state.formIngredients.splice(Number(index), 1)[0];
     document.getElementById("ingredientNameInput").value = item.name || "";
     document.getElementById("ingredientAmountInput").value = item.amount || "";
     document.getElementById("ingredientUnitInput").value = item.unit || "";
     document.getElementById("ingredientNoteInput").value = item.note || "";
+    document.getElementById("ingredientScaleInput").checked = item.scalable !== false;
     renderIngredientList();
     document.getElementById("ingredientNameInput").focus();
   }
   if (action === "import-ingredients") importPastedIngredients();
   if (action === "add-step") addStepFromField();
   if (action === "remove-step") { state.formSteps.splice(Number(index), 1); renderStepList(); }
+  if (action === "move-step") { moveInArray(state.formSteps, Number(index), Number(dir)); renderStepList(); }
   if (action === "edit-step") {
     const step = state.formSteps.splice(Number(index), 1)[0];
     document.getElementById("methodStepInput").value = step;
@@ -1008,6 +1192,12 @@ app.addEventListener("click", async event => {
     state.shopping = await getAll("shopping");
     toast("Completed items cleared");
     renderShopping();
+  }
+  if (action === "set-theme") {
+    state.settings.theme = theme;
+    saveSettings();
+    renderSettings();
+    toast("Theme updated");
   }
   if (action === "export-full") exportData(true);
   if (action === "export-text") exportData(false);
@@ -1037,6 +1227,7 @@ importFile.addEventListener("change", async event => {
 
 async function start() {
   try {
+    applyTheme();
     await loadData();
     renderHome();
     if ("serviceWorker" in navigator) {
