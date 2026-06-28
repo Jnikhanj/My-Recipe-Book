@@ -4,8 +4,8 @@ const importFile = document.getElementById("importFile");
 
 const DB_NAME = "recipeKeeperLocalDB";
 const DB_VERSION = 1;
-const SETTINGS_KEY = "recipeKeeperSettingsV5";
-const LEGACY_SETTINGS_KEY = "recipeKeeperSettingsV4";
+const SETTINGS_KEY = "recipeKeeperSettingsV6";
+const LEGACY_SETTINGS_KEY = "recipeKeeperSettingsV5";
 
 const DEFAULT_LABELS = ["Indian", "Main", "Appetizer", "Dessert", "Quick", "Breakfast", "Lunch", "Dinner", "Drinks"];
 const PLATES = [
@@ -45,6 +45,7 @@ const state = {
   query: "",
   listTab: "toBuy",
   sort: "recent",
+  sortOpen: false,
   formPhoto: "",
   formIngredients: [],
   formSteps: [],
@@ -64,9 +65,12 @@ function uid() {
 function loadSettings() {
   try {
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || localStorage.getItem(LEGACY_SETTINGS_KEY) || "{}");
-    return { theme: saved.theme || "warm" };
+    return {
+      theme: saved.theme || "warm",
+      density: saved.density || "comfortable",
+    };
   } catch (_) {
-    return { theme: "warm" };
+    return { theme: "warm", density: "comfortable" };
   }
 }
 
@@ -77,6 +81,7 @@ function saveSettings() {
 
 function applyTheme() {
   document.body.dataset.theme = state.settings.theme || "warm";
+  document.body.dataset.density = state.settings.density || "comfortable";
 }
 
 function openDb() {
@@ -227,6 +232,12 @@ function icon(name) {
     check: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m5 13 4 4L19 7"/></svg>',
     camera: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2v11Z"/><circle cx="12" cy="13" r="4"/></svg>',
     sort: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v14"/><path d="m4 15 3 3 3-3"/><path d="M17 20V6"/><path d="m14 9 3-3 3 3"/></svg>',
+    plate: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M4 12h.01M20 12h.01"/></svg>',
+    shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 5 6v5c0 5 3.2 8.5 7 10 3.8-1.5 7-5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-5"/></svg>',
+    download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>',
+    upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 4h14"/></svg>',
+    file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h6"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m6 6 1 15h10l1-15"/><path d="M10 11v6M14 11v6"/></svg>',
     edit: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/></svg>',
   };
   return icons[name] || "";
@@ -431,21 +442,67 @@ function filteredRecipes() {
   else if (state.activeLabel !== "All") recipes = recipes.filter(r => (r.labels || []).includes(state.activeLabel));
   if (query) recipes = recipes.filter(r => searchableRecipeText(r).includes(query));
   if (state.sort === "name") recipes.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  else if (state.sort === "cooked") recipes.sort((a, b) => (Number(b.cookedCount) || 0) - (Number(a.cookedCount) || 0) || String(a.name).localeCompare(String(b.name)));
+  else if (state.sort === "favourite") recipes.sort((a, b) => Number(b.favorite) - Number(a.favorite) || String(a.name).localeCompare(String(b.name)));
+  else if (state.sort === "cuisine") recipes.sort((a, b) => String(a.cuisine || "zzz").localeCompare(String(b.cuisine || "zzz")) || String(a.name).localeCompare(String(b.name)));
   else recipes.sort((a, b) => String(b.lastCooked || b.updatedAt || b.createdAt).localeCompare(String(a.lastCooked || a.updatedAt || a.createdAt)));
   return recipes;
+}
+
+function emptyPlateIcon() {
+  return `<div class="empty-plate" aria-hidden="true"><span>${icon("plate")}</span></div>`;
+}
+
+function recipeSubtitle(recipe) {
+  const parts = [recipe.cuisine, (recipe.labels || [])[0]].filter(Boolean);
+  return parts.slice(0, 2).join(" · ") || "Recipe";
+}
+
+function cookedText(count) {
+  const n = Number(count) || 0;
+  return n ? `Cooked ${n}x` : "";
+}
+
+function sortLabel() {
+  const map = { recent: "Newest", name: "A-Z", cooked: "Most cooked", favourite: "Favourites", cuisine: "Cuisine" };
+  return map[state.sort] || "Newest";
+}
+
+function sortMenuHtml() {
+  if (!state.sortOpen) return "";
+  const options = [
+    ["recent", "Newest first"],
+    ["name", "A-Z"],
+    ["cooked", "Most cooked"],
+    ["favourite", "Favourites first"],
+    ["cuisine", "Cuisine"],
+  ];
+  return `<div class="sort-menu" role="menu">${options.map(([value, label]) => `<button class="sort-option ${state.sort === value ? "active" : ""}" data-action="set-sort" data-sort="${value}"><span>${h(label)}</span>${state.sort === value ? icon("check") : ""}</button>`).join("")}</div>`;
+}
+
+function recentCookedHtml() {
+  const recent = [...state.recipes]
+    .filter(r => Number(r.cookedCount) > 0)
+    .sort((a, b) => String(b.lastCooked || b.updatedAt || b.createdAt).localeCompare(String(a.lastCooked || a.updatedAt || a.createdAt)))
+    .slice(0, 5);
+  if (!recent.length || state.query || state.activeLabel !== "All") return "";
+  return `<div class="quick-section"><div class="quick-head"><b>Recently cooked</b><small>${recent.length} quick pick${recent.length === 1 ? "" : "s"}</small></div><div class="quick-scroll">${recent.map(recipe => `<button class="quick-chip" data-action="open" data-id="${h(recipe.id)}">${plateHtml(recipe, "mini")}<span>${h(recipe.name)}</span></button>`).join("")}</div></div>`;
 }
 
 function recipesGridHtml() {
   const recipes = filteredRecipes();
   if (!recipes.length) {
-    return `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🍽️</div><b>No recipes found</b><span>Try another search or add a new dish.</span></div>`;
+    const hasRecipes = state.recipes.length > 0;
+    const title = hasRecipes ? "No matching recipes" : "No recipes yet";
+    const message = hasRecipes ? "Try another search or clear the filter." : "Add your first dish to start building your menu.";
+    return `<div class="empty empty-home" style="grid-column:1/-1">${emptyPlateIcon()}<b>${title}</b><span>${message}</span>${hasRecipes ? `<button class="btn compact" data-action="clear-search">Clear filters</button>` : `<button class="btn compact primary" data-action="new">+ Add dish</button>`}</div>`;
   }
   return recipes.map(recipe => `
     <button class="recipe-tile" data-action="open" data-id="${h(recipe.id)}" aria-label="Open ${h(recipe.name)}">
       ${recipe.favorite ? '<span class="favorite-dot">★</span>' : ""}
       ${plateHtml(recipe, "tile")}
       <div class="tile-name">${h(recipe.name)}</div>
-      <div class="tile-meta">${recipe.cookedCount ? `Had ${h(recipe.cookedCount)} time${recipe.cookedCount === 1 ? "" : "s"}` : h((recipe.labels || [])[0] || recipe.cuisine || "Recipe")}</div>
+      <div class="tile-meta">${h(cookedText(recipe.cookedCount) || recipeSubtitle(recipe))}</div>
     </button>
   `).join("");
 }
@@ -464,22 +521,28 @@ function navHtml(active = state.view) {
 
 function renderHome() {
   const labels = ["All", "Favourites", ...allLabels()].filter((v, i, arr) => arr.indexOf(v) === i && (v === "All" || v === "Favourites" || labelCount(v) > 0));
+  const recipeCount = state.recipes.length;
   app.innerHTML = `
-    <section class="app-shell">
-      <div class="top-row">
+    <section class="app-shell home-shell">
+      <div class="top-row compact-top">
         <div>
           <h1>My menu</h1>
-          <p class="subtitle">A visual cookbook for your home-cooked dishes.</p>
+          <p class="subtitle">${recipeCount ? `${recipeCount} recipe${recipeCount === 1 ? "" : "s"} saved` : "Start your visual cookbook"}</p>
         </div>
-        <button class="icon-btn sort-btn" data-action="sort" aria-label="Change sort order" title="Sort recipes">${icon("sort")}</button>
+        <div class="sort-wrap">
+          <button class="icon-btn sort-btn" data-action="sort" aria-label="Change sort order" title="Sort recipes">${icon("sort")}</button>
+          ${sortMenuHtml()}
+        </div>
       </div>
       <div class="search-wrap">
         ${icon("search")}
         <input id="searchInput" type="search" placeholder="Search dishes or ingredients" value="${h(state.query)}" autocomplete="off" />
       </div>
-      <div class="chips" aria-label="Recipe categories">
+      <div class="chips compact-chips" aria-label="Recipe categories">
         ${labels.map(label => `<button class="chip ${state.activeLabel === label ? "active" : ""}" data-action="filter" data-label="${h(label)}">${h(label)} (${labelCount(label)})</button>`).join("")}
       </div>
+      ${recentCookedHtml()}
+      <div class="section-label-row"><b>${state.activeLabel === "All" ? "All recipes" : h(state.activeLabel)}</b><small>Sorted by ${h(sortLabel())}</small></div>
       <div id="recipeGrid" class="recipe-grid">${recipesGridHtml()}</div>
       ${navHtml("home")}
     </section>
@@ -516,9 +579,11 @@ function detailHtml(recipe) {
         <div class="toolbar-title">Recipe</div>
         <button class="icon-btn fav-btn" data-action="toggle-fav" data-id="${h(recipe.id)}" aria-label="Toggle favourite">${recipe.favorite ? "★" : "☆"}</button>
       </div>
-      ${plateHtml(recipe, "hero")}
-      <h2 class="hero-title">${h(recipe.name)}</h2>
-      <div class="hero-meta">${h([labels || recipe.cuisine || "Recipe", recipe.cook ? `Cook ${recipe.cook}` : ""].filter(Boolean).join(" · "))}</div>
+      <div class="recipe-hero-compact">
+        ${plateHtml(recipe, "hero")}
+        <h2 class="hero-title">${h(recipe.name)}</h2>
+        <div class="hero-meta">${h([labels || recipe.cuisine || "Recipe", recipe.cook ? `Cook ${recipe.cook}` : ""].filter(Boolean).join(" · "))}</div>
+      </div>
       <div class="portion-card">
         <div>
           <b>${h(portions)} portion${portions === 1 ? "" : "s"}</b>
@@ -1031,20 +1096,27 @@ function renderSettings() {
         <button class="icon-btn" data-action="new" aria-label="Add recipe">+</button>
       </div>
       <h3 class="section-title">Appearance</h3>
+      <div class="setting-block">
+        <div class="setting-block-head"><b>Display density</b><small>Choose how much space the recipe grid uses.</small></div>
+        <div class="segmented-control">
+          <button class="${(state.settings.density || "comfortable") === "comfortable" ? "active" : ""}" data-action="set-density" data-density="comfortable">Comfortable</button>
+          <button class="${state.settings.density === "compact" ? "active" : ""}" data-action="set-density" data-density="compact">Compact</button>
+        </div>
+      </div>
       <div class="theme-grid">
         ${THEMES.map(theme => `<button class="theme-card ${state.settings.theme === theme.id ? "active" : ""}" data-action="set-theme" data-theme="${h(theme.id)}"><span class="theme-swatch theme-${h(theme.id)}"></span><b>${h(theme.name)}</b><small>${h(theme.note)}</small></button>`).join("")}
       </div>
       <div class="backup-hero compact-settings-hero">
-        <div class="shield">🛡️</div>
+        <div class="shield-icon">${icon("shield")}</div>
         <h2 style="margin:0 0 8px">Your recipes are local</h2>
         <p class="small-muted" style="margin:0">Recipes and photos are stored on this iPhone/iPad browser. Export a backup regularly, especially before clearing Safari website data.</p>
       </div>
       <h3 class="section-title">Backup & restore</h3>
-      <button class="settings-row" data-action="export-full"><span class="settings-icon">⬇️</span><span><b>Export full backup</b><small>Includes recipes, photos and shopping list</small></span><span>›</span></button>
-      <button class="settings-row" data-action="export-text"><span class="settings-icon">📝</span><span><b>Export recipe text only</b><small>Smaller JSON file without photos</small></span><span>›</span></button>
-      <button class="settings-row" data-action="import-backup"><span class="settings-icon">📥</span><span><b>Import backup</b><small>Restore from a JSON backup file</small></span><span>›</span></button>
+      <button class="settings-row" data-action="export-full"><span class="settings-icon">${icon("download")}</span><span><b>Export full backup</b><small>Includes recipes, photos and shopping list</small></span><span>›</span></button>
+      <button class="settings-row" data-action="export-text"><span class="settings-icon">${icon("file")}</span><span><b>Export recipe text only</b><small>Smaller JSON file without photos</small></span><span>›</span></button>
+      <button class="settings-row" data-action="import-backup"><span class="settings-icon">${icon("upload")}</span><span><b>Import backup</b><small>Restore from a JSON backup file</small></span><span>›</span></button>
       <h3 class="section-title">Data</h3>
-      <button class="settings-row" data-action="clear-recipes"><span class="settings-icon warning">🗑️</span><span><b>Clear all recipes</b><small class="warning">This cannot be undone unless you have a backup</small></span><span>›</span></button>
+      <button class="settings-row" data-action="clear-recipes"><span class="settings-icon warning">${icon("trash")}</span><span><b>Clear all recipes</b><small class="warning">This cannot be undone unless you have a backup</small></span><span>›</span></button>
       ${navHtml("settings")}
     </section>
   `;
@@ -1139,7 +1211,7 @@ function exportData(includePhotos = true) {
   const recipes = state.recipes.map(recipe => includePhotos ? recipe : { ...recipe, photo: "" });
   downloadJson(`recipe-keeper-${includePhotos ? "full" : "text"}-${new Date().toISOString().slice(0, 10)}.json`, {
     app: "Recipe Keeper",
-    version: 5,
+    version: 6,
     exportedAt: new Date().toISOString(),
     includesPhotos: includePhotos,
     settings: state.settings,
@@ -1158,8 +1230,9 @@ async function importBackupFile(file) {
     await clearStore("recipes");
     await clearStore("shopping");
   }
-  if (data.settings?.theme) {
-    state.settings.theme = THEMES.some(t => t.id === data.settings.theme) ? data.settings.theme : state.settings.theme;
+  if (data.settings) {
+    if (data.settings.theme) state.settings.theme = THEMES.some(t => t.id === data.settings.theme) ? data.settings.theme : state.settings.theme;
+    if (["comfortable", "compact"].includes(data.settings.density)) state.settings.density = data.settings.density;
     saveSettings();
   }
   for (const recipe of data.recipes) {
@@ -1228,8 +1301,10 @@ app.addEventListener("click", async event => {
   if (action === "edit") { state.view = "form"; renderForm(id); }
   if (action === "cancel-form") { state.view = "home"; renderHome(); }
   if (action === "save-form") await saveForm();
-  if (action === "filter") { state.activeLabel = label; renderHome(); }
-  if (action === "sort") { state.sort = state.sort === "name" ? "recent" : "name"; renderHome(); }
+  if (action === "filter") { state.activeLabel = label; state.sortOpen = false; renderHome(); }
+  if (action === "clear-search") { state.query = ""; state.activeLabel = "All"; state.sortOpen = false; renderHome(); }
+  if (action === "sort") { state.sortOpen = !state.sortOpen; renderHome(); }
+  if (action === "set-sort") { state.sort = target.dataset.sort || "recent"; state.sortOpen = false; renderHome(); }
   if (action === "toggle-fav") { await toggleFavourite(id); renderDetail(id); }
   if (action === "mark-cooked") await markCooked(id);
   if (action === "add-shopping") await addRecipeIngredientsToShopping(id);
@@ -1300,6 +1375,12 @@ app.addEventListener("click", async event => {
     saveSettings();
     renderSettings();
     toast("Theme updated");
+  }
+  if (action === "set-density") {
+    state.settings.density = target.dataset.density === "compact" ? "compact" : "comfortable";
+    saveSettings();
+    renderSettings();
+    toast("Display updated");
   }
   if (action === "export-full") exportData(true);
   if (action === "export-text") exportData(false);
