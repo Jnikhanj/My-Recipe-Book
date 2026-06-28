@@ -434,3 +434,155 @@ h1 {
 @supports not (clip-path: path("M 0 0")) {
   .shape-flower { clip-path: polygon(50% 0%, 63% 16%, 85% 8%, 92% 30%, 100% 50%, 85% 66%, 92% 92%, 63% 84%, 50% 100%, 37% 84%, 8% 92%, 15% 66%, 0% 50%, 15% 30%, 8% 8%, 37% 16%); }
 }
+
+/* v2 refinements: compact add form, structured ingredients and step-based method */
+.stat-grid.two { grid-template-columns: repeat(2, 1fr); max-width: 360px; margin-left: auto; margin-right: auto; }
+.form-section.tight { margin-top: 13px; }
+.compact-photo { width: min(150px, 42vw); margin: 2px auto 16px; }
+.compact-photo .photo-pick { width: 46px; height: 46px; }
+.compact-labels {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: 2px 2px 8px;
+  margin: 0 -2px;
+  scrollbar-width: none;
+}
+.compact-labels::-webkit-scrollbar { display: none; }
+.compact-labels .label-chip {
+  flex: 0 0 auto;
+  min-height: 35px;
+  padding: 8px 13px;
+  font-size: 13px;
+  line-height: 1;
+}
+.compact-labels .add-label { width: 37px; padding-left: 0; padding-right: 0; }
+.one-plus { grid-template-columns: 1fr; max-width: calc(50% - 7px); }
+.builder-card {
+  margin-top: 18px;
+  background: rgba(255,253,247,.70);
+  border: 1px solid rgba(230,217,202,.82);
+  border-radius: 25px;
+  padding: 15px;
+  box-shadow: 0 8px 26px rgba(54,26,8,.05);
+}
+.builder-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.section-title.mini { margin: 0 0 4px; font-size: 17px; }
+.builder-head .small-muted { margin: 0; }
+.mini-link {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--primary);
+  background: rgba(255,255,255,.65);
+  font-weight: 900;
+  font-size: 12px;
+}
+.paste-box {
+  margin: 11px 0 13px;
+  padding: 12px;
+  background: rgba(246,235,220,.48);
+  border: 1px dashed rgba(122,63,8,.25);
+  border-radius: 20px;
+}
+.paste-box textarea { min-height: 120px; background: rgba(255,255,255,.72); }
+.ingredient-fields {
+  display: grid;
+  grid-template-columns: 1fr 94px 104px;
+  gap: 10px;
+  align-items: end;
+}
+.ingredient-fields label, .builder-card > label {
+  display: block;
+  margin: 0 0 8px;
+  color: #837365;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: .06em;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.ingredient-name-wrap { position: relative; grid-column: 1 / -1; }
+.ingredient-note-field { grid-column: 1 / -1; }
+.ingredient-fields input, .ingredient-fields select { border-radius: 16px; padding: 13px 14px; }
+.suggestion-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-top: 8px;
+  scrollbar-width: none;
+}
+.suggestion-row::-webkit-scrollbar { display: none; }
+.suggestion-chip {
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.76);
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 12px;
+}
+.ingredient-list, .step-list { display: grid; gap: 8px; margin-top: 12px; }
+.builder-row {
+  display: grid;
+  grid-template-columns: 1fr 38px;
+  align-items: stretch;
+  gap: 8px;
+}
+.row-main {
+  min-width: 0;
+  text-align: left;
+  background: rgba(255,255,255,.72);
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  padding: 11px 12px;
+  line-height: 1.25;
+}
+.row-main b { display: block; font-size: 14px; overflow-wrap: anywhere; }
+.row-main small { display: block; color: var(--muted); margin-top: 3px; }
+.row-delete {
+  border-radius: 15px;
+  border: 1px solid rgba(211,58,44,.20);
+  background: rgba(255,255,255,.58);
+  color: var(--danger);
+  font-size: 22px;
+  font-weight: 800;
+}
+.empty-inline {
+  color: var(--muted);
+  font-size: 13px;
+  background: rgba(255,255,255,.48);
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+  padding: 12px;
+}
+.step-input { min-height: 82px; }
+.step-row .row-main {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: start;
+  gap: 8px;
+}
+.step-number {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--paper-2);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 900;
+}
+@media (max-width: 390px) {
+  .ingredient-fields { grid-template-columns: 1fr 82px 94px; gap: 8px; }
+  .one-plus { max-width: 100%; }
+}

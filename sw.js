@@ -1,4 +1,4 @@
-const CACHE_NAME = "recipe-keeper-v1";
+const CACHE_NAME = "recipe-keeper-v2";
 const ASSETS = [
   "./",
   "index.html",

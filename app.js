@@ -5,14 +5,6 @@ const importFile = document.getElementById("importFile");
 const DB_NAME = "recipeKeeperLocalDB";
 const DB_VERSION = 1;
 const DEFAULT_LABELS = ["Indian", "Main", "Appetizer", "Dessert", "Quick", "Breakfast", "Lunch", "Dinner", "Drinks"];
-const SHAPES = [
-  { id: "circle", label: "Circle" },
-  { id: "flower", label: "Flower" },
-  { id: "soft", label: "Soft" },
-  { id: "scallop", label: "Scallop" },
-  { id: "hex", label: "Hex" },
-  { id: "squircle", label: "Squircle" },
-];
 const PLATES = [
   { id: "none", label: "None" },
   { id: "checker", label: "Checker" },
@@ -22,6 +14,16 @@ const PLATES = [
   { id: "navystripe", label: "Navy stripe" },
   { id: "garden", label: "Garden" },
   { id: "greenrim", label: "Green rim" },
+];
+const UNITS = ["", "g", "kg", "ml", "L", "tsp", "tbsp", "cup", "piece", "pinch", "clove", "inch", "bunch", "packet", "can", "to taste"];
+const COMMON_INGREDIENTS = [
+  "Chicken", "Chicken breast", "Chicken thigh", "Egg", "Fish", "Prawns", "Paneer", "Tofu",
+  "Onion", "Red onion", "Tomato", "Potato", "Carrot", "Capsicum", "Spinach", "Coriander", "Mint",
+  "Garlic", "Ginger", "Ginger garlic paste", "Green chilli", "Red chilli powder", "Turmeric", "Cumin", "Coriander powder",
+  "Garam masala", "Chole masala", "Kasuri methi", "Black pepper", "Salt", "Sugar", "Honey",
+  "Rice", "Basmati rice", "Flour", "Wheat flour", "Besan", "Pasta", "Noodles", "Bread",
+  "Milk", "Cream", "Yoghurt", "Butter", "Ghee", "Oil", "Olive oil", "Coconut milk", "Cheese",
+  "Soy sauce", "Vinegar", "Tomato puree", "Lemon juice", "Tea leaves", "Cardamom", "Cinnamon", "Cloves"
 ];
 
 const state = {
@@ -33,6 +35,8 @@ const state = {
   listTab: "toBuy",
   sort: "recent",
   formPhoto: "",
+  formIngredients: [],
+  formSteps: [],
 };
 
 let dbPromise;
@@ -119,15 +123,43 @@ async function loadData() {
 async function seedDemoRecipes() {
   const now = new Date().toISOString();
   const demos = [
-    { name: "Butter Chicken", labels: ["Indian", "Dinner", "Main"], cuisine: "Indian", prep: "20 min", cook: "40 min", serves: 4, emoji: "🍛", plate: "checker", shape: "circle", cookedCount: 2, ingredients: "500 g chicken\n1 cup yoghurt\n2 onion\nTomato puree\nButter\nGaram masala\nCream\nFresh coriander", method: "Marinate chicken with yoghurt and spices.\nCook onion, tomato puree and butter until thick.\nAdd chicken and simmer until cooked.\nFinish with cream and coriander.", notes: "Use less chilli if cooking for family." },
-    { name: "Egg Fried Rice", labels: ["Quick", "Lunch"], cuisine: "Chinese", prep: "10 min", cook: "15 min", serves: 2, emoji: "🍚", plate: "blueflower", shape: "flower", cookedCount: 1, ingredients: "Cooked rice\n2 eggs\nSoy sauce\nSpring onion\nMixed vegetables", method: "Scramble eggs.\nStir fry vegetables.\nAdd rice and soy sauce.\nMix eggs through and serve hot." },
-    { name: "Masala Chai", labels: ["Drinks", "Indian", "Quick"], cuisine: "Indian", prep: "2 min", cook: "8 min", serves: 2, emoji: "☕", plate: "greenrim", shape: "soft", cookedCount: 5, ingredients: "Water\nMilk\nTea leaves\nGinger\nCardamom\nSugar", method: "Boil water with ginger and cardamom.\nAdd tea leaves and milk.\nSimmer, strain and serve." },
-    { name: "Chole", labels: ["Indian", "Main", "Dinner"], cuisine: "Indian", prep: "15 min", cook: "45 min", serves: 4, emoji: "🥘", plate: "redpolka", shape: "scallop", cookedCount: 3, ingredients: "Chickpeas\nOnion\nTomato\nGinger garlic paste\nChole masala\nCoriander", method: "Cook onion and tomato masala.\nAdd chickpeas and spices.\nSimmer until thick." },
-    { name: "Mango Sticky Rice", labels: ["Dessert"], cuisine: "Thai", prep: "15 min", cook: "25 min", serves: 3, emoji: "🥭", plate: "navystripe", shape: "hex", cookedCount: 0, ingredients: "Sticky rice\nCoconut milk\nSugar\nSalt\nMango", method: "Steam sticky rice.\nWarm coconut milk with sugar and salt.\nMix with rice and serve with mango." },
-    { name: "Aloo Paratha", labels: ["Indian", "Breakfast"], cuisine: "Indian", prep: "25 min", cook: "20 min", serves: 4, emoji: "🫓", plate: "peach", shape: "squircle", cookedCount: 4, ingredients: "Wheat flour\nPotato\nCumin\nCoriander\nGreen chilli\nGhee", method: "Prepare dough and potato filling.\nRoll, fill and cook on tawa with ghee." },
+    {
+      name: "Butter Chicken", labels: ["Indian", "Dinner", "Main"], cuisine: "Indian", prep: "20 min", cook: "40 min", emoji: "🍛", plate: "checker", cookedCount: 2,
+      ingredientsList: [
+        { amount: "500", unit: "g", name: "Chicken", note: "boneless" },
+        { amount: "1", unit: "cup", name: "Yoghurt", note: "" },
+        { amount: "2", unit: "piece", name: "Onion", note: "finely chopped" },
+        { amount: "1", unit: "cup", name: "Tomato puree", note: "" },
+        { amount: "2", unit: "tbsp", name: "Butter", note: "" },
+        { amount: "1", unit: "tsp", name: "Garam masala", note: "" },
+        { amount: "", unit: "", name: "Cream", note: "to finish" },
+        { amount: "", unit: "", name: "Fresh coriander", note: "garnish" },
+      ],
+      methodSteps: [
+        "Marinate chicken with yoghurt and spices.",
+        "Cook onion, tomato puree and butter until thick.",
+        "Add chicken and simmer until cooked.",
+        "Finish with cream and coriander."
+      ],
+      notes: "Use less chilli if cooking for family."
+    },
+    { name: "Egg Fried Rice", labels: ["Quick", "Lunch"], cuisine: "Chinese", prep: "10 min", cook: "15 min", emoji: "🍚", plate: "blueflower", cookedCount: 1, ingredients: "Cooked rice\n2 eggs\nSoy sauce\nSpring onion\nMixed vegetables", method: "Scramble eggs.\nStir fry vegetables.\nAdd rice and soy sauce.\nMix eggs through and serve hot." },
+    { name: "Masala Chai", labels: ["Drinks", "Indian", "Quick"], cuisine: "Indian", prep: "2 min", cook: "8 min", emoji: "☕", plate: "greenrim", cookedCount: 5, ingredients: "Water\nMilk\nTea leaves\nGinger\nCardamom\nSugar", method: "Boil water with ginger and cardamom.\nAdd tea leaves and milk.\nSimmer, strain and serve." },
+    { name: "Chole", labels: ["Indian", "Main", "Dinner"], cuisine: "Indian", prep: "15 min", cook: "45 min", emoji: "🥘", plate: "redpolka", cookedCount: 3, ingredients: "Chickpeas\nOnion\nTomato\nGinger garlic paste\nChole masala\nCoriander", method: "Cook onion and tomato masala.\nAdd chickpeas and spices.\nSimmer until thick." },
+    { name: "Mango Sticky Rice", labels: ["Dessert"], cuisine: "Thai", prep: "15 min", cook: "25 min", emoji: "🥭", plate: "navystripe", cookedCount: 0, ingredients: "Sticky rice\nCoconut milk\nSugar\nSalt\nMango", method: "Steam sticky rice.\nWarm coconut milk with sugar and salt.\nMix with rice and serve with mango." },
+    { name: "Aloo Paratha", labels: ["Indian", "Breakfast"], cuisine: "Indian", prep: "25 min", cook: "20 min", emoji: "🫓", plate: "peach", cookedCount: 4, ingredients: "Wheat flour\nPotato\nCumin\nCoriander\nGreen chilli\nGhee", method: "Prepare dough and potato filling.\nRoll, fill and cook on tawa with ghee." },
   ];
   for (const demo of demos) {
-    await putItem("recipes", { id: uid(), photo: "", favorite: demo.cookedCount > 2, createdAt: now, updatedAt: now, lastCooked: "", notes: "", ...demo });
+    const ingredientsList = demo.ingredientsList || lineArray(demo.ingredients).map(parseIngredientLine);
+    const methodSteps = demo.methodSteps || lineArray(demo.method);
+    await putItem("recipes", {
+      id: uid(), photo: "", favorite: demo.cookedCount > 2, createdAt: now, updatedAt: now, lastCooked: "", notes: "",
+      shape: "circle", serves: "", ...demo,
+      ingredientsList,
+      methodSteps,
+      ingredients: ingredientsList.map(formatIngredient).join("\n"),
+      method: methodSteps.join("\n"),
+    });
   }
 }
 
@@ -165,14 +197,79 @@ function icon(name) {
   return icons[name] || "";
 }
 
+function lineArray(text) {
+  return String(text || "").split(/\n+/).map(x => x.replace(/^[-•*\d.)\s]+/, "").trim()).filter(Boolean);
+}
+
+function parseIngredientLine(line) {
+  const clean = String(line || "").replace(/^[-•*\d.)\s]+/, "").trim();
+  if (!clean) return { amount: "", unit: "", name: "", note: "" };
+  if (/salt\s+to\s+taste/i.test(clean)) return { amount: "", unit: "to taste", name: "Salt", note: "" };
+  const match = clean.match(/^(\d+(?:[./]\d+)?|\d+\s*\/\s*\d+|½|¼|¾|⅓|⅔)?\s*(g|kg|ml|l|tsp|tbsp|cup|cups|piece|pieces|pinch|clove|cloves|inch|bunch|packet|packets|can|cans)?\s+(.+)$/i);
+  if (match && (match[1] || match[2])) {
+    const unit = normaliseUnit(match[2] || "");
+    const rest = match[3].trim();
+    const noteMatch = rest.match(/^(.+?)(?:,\s*|\s+-\s+|\s+\()(.+?)\)?$/);
+    return { amount: (match[1] || "").replace(/\s+/g, ""), unit, name: titleCase((noteMatch ? noteMatch[1] : rest).trim()), note: noteMatch ? noteMatch[2].trim() : "" };
+  }
+  return { amount: "", unit: "", name: titleCase(clean), note: "" };
+}
+
+function normaliseUnit(unit) {
+  const u = String(unit || "").trim().toLowerCase();
+  const map = { l: "L", cups: "cup", pieces: "piece", cloves: "clove", packets: "packet", cans: "can" };
+  return map[u] || u;
+}
+
+function titleCase(value) {
+  return String(value || "").trim().replace(/\s+/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function getRecipeIngredients(recipe) {
+  if (Array.isArray(recipe?.ingredientsList) && recipe.ingredientsList.length) {
+    return recipe.ingredientsList.map(item => ({ amount: item.amount || "", unit: item.unit || "", name: item.name || "", note: item.note || "" })).filter(item => item.name);
+  }
+  return lineArray(recipe?.ingredients).map(parseIngredientLine).filter(item => item.name);
+}
+
+function getRecipeSteps(recipe) {
+  if (Array.isArray(recipe?.methodSteps) && recipe.methodSteps.length) return recipe.methodSteps.filter(Boolean);
+  return lineArray(recipe?.method);
+}
+
+function formatIngredient(item) {
+  const amount = String(item.amount || "").trim();
+  const unit = String(item.unit || "").trim();
+  const name = String(item.name || "").trim();
+  const note = String(item.note || "").trim();
+  if (!name) return "";
+  const qty = [amount, unit].filter(Boolean).join(" ");
+  return `${qty ? `${qty} ` : ""}${name}${note ? `, ${note}` : ""}`.trim();
+}
+
+function ingredientSuggestions(query = "") {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const used = [];
+  state.recipes.forEach(recipe => getRecipeIngredients(recipe).forEach(item => item.name && used.push(item.name)));
+  const all = [...new Set([...COMMON_INGREDIENTS, ...used].map(titleCase))];
+  return all
+    .filter(name => name.toLowerCase().includes(q))
+    .sort((a, b) => {
+      const as = a.toLowerCase().startsWith(q) ? 0 : 1;
+      const bs = b.toLowerCase().startsWith(q) ? 0 : 1;
+      return as - bs || a.localeCompare(b);
+    })
+    .slice(0, 7);
+}
+
 function plateHtml(recipe, size = "tile") {
-  const shape = recipe.shape || "circle";
   const plate = recipe.plate || "checker";
   const fallback = recipe.emoji ? h(recipe.emoji) : h(initials(recipe.name));
   const photo = safePhoto(recipe.photo);
   return `
     <div class="plate ${size} plate-${h(plate)}" aria-hidden="true">
-      <div class="dish-img shape-${h(shape)} ${photo ? "has-photo" : ""}" ${photoStyle(photo)}>${fallback}</div>
+      <div class="dish-img shape-circle ${photo ? "has-photo" : ""}" ${photoStyle(photo)}>${fallback}</div>
     </div>
   `;
 }
@@ -189,15 +286,23 @@ function labelCount(label) {
   return state.recipes.filter(r => (r.labels || []).includes(label)).length;
 }
 
+function searchableRecipeText(recipe) {
+  return [
+    recipe.name,
+    recipe.cuisine,
+    (recipe.labels || []).join(" "),
+    getRecipeIngredients(recipe).map(formatIngredient).join(" "),
+    getRecipeSteps(recipe).join(" "),
+    recipe.notes
+  ].join(" ").toLowerCase();
+}
+
 function filteredRecipes() {
   const query = state.query.trim().toLowerCase();
   let recipes = [...state.recipes];
   if (state.activeLabel === "Favourites") recipes = recipes.filter(r => r.favorite);
   else if (state.activeLabel !== "All") recipes = recipes.filter(r => (r.labels || []).includes(state.activeLabel));
-  if (query) {
-    recipes = recipes.filter(r => [r.name, r.cuisine, (r.labels || []).join(" "), r.ingredients, r.method, r.notes]
-      .join(" ").toLowerCase().includes(query));
-  }
+  if (query) recipes = recipes.filter(r => searchableRecipeText(r).includes(query));
   if (state.sort === "name") recipes.sort((a, b) => String(a.name).localeCompare(String(b.name)));
   else recipes.sort((a, b) => String(b.lastCooked || b.updatedAt || b.createdAt).localeCompare(String(a.lastCooked || a.updatedAt || a.createdAt)));
   return recipes;
@@ -259,14 +364,10 @@ function renderHome() {
   });
 }
 
-function lineArray(text) {
-  return String(text || "").split(/\n+/).map(x => x.replace(/^[-•*\d.)\s]+/, "").trim()).filter(Boolean);
-}
-
 function detailHtml(recipe) {
   const labels = (recipe.labels || []).join(" · ");
-  const ingredients = lineArray(recipe.ingredients);
-  const method = lineArray(recipe.method);
+  const ingredients = getRecipeIngredients(recipe);
+  const method = getRecipeSteps(recipe);
   return `
     <section class="app-shell">
       <div class="toolbar">
@@ -277,10 +378,9 @@ function detailHtml(recipe) {
       ${plateHtml(recipe, "hero")}
       <h2 class="hero-title">${h(recipe.name)}</h2>
       <div class="hero-meta">${h(labels || recipe.cuisine || "Recipe")}</div>
-      <div class="stat-grid">
+      <div class="stat-grid two">
         <div class="stat"><b>${h(recipe.prep || "—")}</b><span>Prep</span></div>
         <div class="stat"><b>${h(recipe.cook || "—")}</b><span>Cook</span></div>
-        <div class="stat"><b>${h(recipe.serves || "—")}</b><span>Serves</span></div>
       </div>
       <div class="card">
         <div class="section-head">
@@ -288,7 +388,7 @@ function detailHtml(recipe) {
           <button class="chip accent" data-action="add-shopping" data-id="${h(recipe.id)}">Add to list</button>
         </div>
         <div class="line-list" style="margin-top:13px">
-          ${ingredients.length ? ingredients.map(item => `<label class="check-row"><input type="checkbox"><span>${h(item)}</span></label>`).join("") : '<p class="small-muted">No ingredients added yet.</p>'}
+          ${ingredients.length ? ingredients.map(item => `<label class="check-row"><input type="checkbox"><span>${h(formatIngredient(item))}</span></label>`).join("") : '<p class="small-muted">No ingredients added yet.</p>'}
         </div>
         <div class="section-title">Method</div>
         ${method.length ? `<ol class="method-list">${method.map(step => `<li>${h(step)}</li>`).join("")}</ol>` : '<p class="small-muted">No method added yet.</p>'}
@@ -312,16 +412,17 @@ function renderDetail(id) {
 
 function formLabelsHtml(selectedLabels) {
   const labels = [...new Set([...DEFAULT_LABELS, ...allLabels(), ...selectedLabels])].filter(label => label !== "All" && label !== "Favourites");
-  return labels.map(label => `<button type="button" class="label-chip ${selectedLabels.includes(label) ? "active" : ""}" data-label-chip="${h(label)}">${h(label)}</button>`).join("") + `<button type="button" class="label-chip" data-action="add-label">+</button>`;
+  return labels.map(label => `<button type="button" class="label-chip ${selectedLabels.includes(label) ? "active" : ""}" data-label-chip="${h(label)}">${h(label)}</button>`).join("") + `<button type="button" class="label-chip add-label" data-action="add-label">+</button>`;
 }
 
 function renderForm(id = null) {
   const recipe = id ? state.recipes.find(r => r.id === id) : null;
   const selectedLabels = recipe?.labels?.length ? recipe.labels : ["Main"];
-  const shape = recipe?.shape || "circle";
   const plate = recipe?.plate || "checker";
   state.formPhoto = recipe?.photo || "";
-  const previewRecipe = { name: recipe?.name || "New Dish", emoji: recipe?.emoji || "🍽️", shape, plate, photo: state.formPhoto };
+  state.formIngredients = getRecipeIngredients(recipe || {});
+  state.formSteps = getRecipeSteps(recipe || {});
+  const previewRecipe = { name: recipe?.name || "New Dish", emoji: recipe?.emoji || "🍽️", plate, photo: state.formPhoto };
   app.innerHTML = `
     <section class="app-shell form-shell">
       <div class="toolbar">
@@ -331,44 +432,28 @@ function renderForm(id = null) {
       </div>
       <form id="recipeForm" novalidate>
         <input type="hidden" id="recipeId" value="${h(recipe?.id || "")}" />
-        <input type="hidden" id="shapeValue" value="${h(shape)}" />
         <input type="hidden" id="plateValue" value="${h(plate)}" />
-        <div class="photo-edit">
+        <div class="photo-edit compact-photo">
           <div id="previewPlate">${plateHtml(previewRecipe, "preview")}</div>
           <label class="photo-pick" aria-label="Add photo">
             ${icon("camera")}
             <input id="photoInput" type="file" accept="image/*" hidden />
           </label>
         </div>
-        <div class="form-section">
+        <div class="form-section tight">
           <label for="nameInput">Dish name</label>
           <input id="nameInput" required maxlength="80" placeholder="Dish name (required)" value="${h(recipe?.name || "")}" />
         </div>
-        <div class="form-section">
-          <div class="field-label">Label</div>
-          <div id="labelWrap" class="label-wrap">${formLabelsHtml(selectedLabels)}</div>
-        </div>
-        <div class="form-section">
-          <label for="cuisineInput">Cuisine</label>
-          <input id="cuisineInput" placeholder="e.g. Indian, Thai, Italian" value="${h(recipe?.cuisine || "")}" />
+        <div class="form-section tight">
+          <div class="field-label">Labels</div>
+          <div id="labelWrap" class="label-wrap compact-labels">${formLabelsHtml(selectedLabels)}</div>
         </div>
         <div class="form-section form-grid">
-          <div><label for="prepInput">Prep time</label><input id="prepInput" placeholder="e.g. 20 min" value="${h(recipe?.prep || "")}" /></div>
-          <div><label for="cookInput">Cook time</label><input id="cookInput" placeholder="e.g. 40 min" value="${h(recipe?.cook || "")}" /></div>
+          <div><label for="cuisineInput">Cuisine</label><input id="cuisineInput" placeholder="e.g. Indian" value="${h(recipe?.cuisine || "")}" /></div>
+          <div><label for="prepInput">Prep time</label><input id="prepInput" placeholder="20 min" value="${h(recipe?.prep || "")}" /></div>
         </div>
-        <div class="form-section">
-          <div class="field-label">Serves</div>
-          <div class="stepper">
-            <button type="button" data-action="serves-minus">−</button>
-            <output id="servesOutput">${h(recipe?.serves || 2)}</output>
-            <button type="button" data-action="serves-plus">+</button>
-          </div>
-        </div>
-        <div class="form-section">
-          <div class="field-label">Shape</div>
-          <div class="option-row">
-            ${SHAPES.map(s => `<button type="button" class="shape-option ${shape === s.id ? "active" : ""}" title="${h(s.label)}" data-shape="${h(s.id)}"><span class="shape-sample shape-${h(s.id)}"></span></button>`).join("")}
-          </div>
+        <div class="form-section form-grid one-plus">
+          <div><label for="cookInput">Cook time</label><input id="cookInput" placeholder="40 min" value="${h(recipe?.cook || "")}" /></div>
         </div>
         <div class="form-section">
           <div class="field-label">Plate backdrop</div>
@@ -376,36 +461,95 @@ function renderForm(id = null) {
             ${PLATES.map(p => `<button type="button" class="plate-option ${plate === p.id ? "active" : ""}" title="${h(p.label)}" data-plate="${h(p.id)}"><span class="plate plate-${h(p.id)}"><span class="dish-img shape-circle" style="width:48%;height:48%;font-size:12px"> </span></span></button>`).join("")}
           </div>
         </div>
-        <div class="form-section">
-          <label for="ingredientsInput">Ingredients</label>
-          <textarea id="ingredientsInput" placeholder="Enter ingredients, one per line">${h(recipe?.ingredients || "")}</textarea>
+
+        <div class="builder-card" id="ingredientBuilder">
+          <div class="builder-head">
+            <div>
+              <div class="section-title mini">Ingredients</div>
+              <p class="small-muted">Add structured rows to avoid spelling and shopping-list errors.</p>
+            </div>
+            <button type="button" class="mini-link" data-action="toggle-paste" data-target="ingredientPasteBox">Quick paste</button>
+          </div>
+          <div id="ingredientPasteBox" class="paste-box hidden">
+            <textarea id="ingredientPasteInput" placeholder="Paste ingredients, one per line&#10;500g chicken&#10;1 cup yoghurt&#10;Salt to taste"></textarea>
+            <button type="button" class="btn full" data-action="import-ingredients">Add pasted ingredients</button>
+          </div>
+          <div class="ingredient-fields">
+            <div class="ingredient-name-wrap">
+              <label for="ingredientNameInput">Ingredient</label>
+              <input id="ingredientNameInput" placeholder="Start typing, e.g. garlic" autocomplete="off" />
+              <div id="ingredientSuggestions" class="suggestion-row"></div>
+            </div>
+            <div>
+              <label for="ingredientAmountInput">Amount</label>
+              <input id="ingredientAmountInput" placeholder="500" inputmode="decimal" />
+            </div>
+            <div>
+              <label for="ingredientUnitInput">Unit</label>
+              <select id="ingredientUnitInput">
+                ${UNITS.map(unit => `<option value="${h(unit)}">${unit ? h(unit) : "—"}</option>`).join("")}
+              </select>
+            </div>
+            <div class="ingredient-note-field">
+              <label for="ingredientNoteInput">Note</label>
+              <input id="ingredientNoteInput" placeholder="chopped, optional" />
+            </div>
+          </div>
+          <button type="button" class="btn dark full" data-action="add-ingredient">+ Add ingredient</button>
+          <div id="ingredientList" class="ingredient-list"></div>
         </div>
-        <div class="form-section">
-          <label for="methodInput">Method</label>
-          <textarea id="methodInput" placeholder="Write the method / steps">${h(recipe?.method || "")}</textarea>
+
+        <div class="builder-card">
+          <div class="builder-head">
+            <div>
+              <div class="section-title mini">Method</div>
+              <p class="small-muted">Add one clear cooking step at a time.</p>
+            </div>
+            <button type="button" class="mini-link" data-action="toggle-paste" data-target="methodPasteBox">Quick paste</button>
+          </div>
+          <div id="methodPasteBox" class="paste-box hidden">
+            <textarea id="methodPasteInput" placeholder="Paste method steps, one per line"></textarea>
+            <button type="button" class="btn full" data-action="import-steps">Add pasted steps</button>
+          </div>
+          <label for="methodStepInput">New step</label>
+          <textarea id="methodStepInput" class="step-input" placeholder="e.g. Cook onion until golden brown"></textarea>
+          <button type="button" class="btn dark full" data-action="add-step">+ Add step</button>
+          <div id="stepList" class="step-list"></div>
         </div>
+
         <div class="form-section">
           <label for="notesInput">Notes</label>
-          <textarea id="notesInput" placeholder="Optional notes or recipe changes">${h(recipe?.notes || "")}</textarea>
+          <textarea id="notesInput" placeholder="Optional changes, family preferences, reminders">${h(recipe?.notes || "")}</textarea>
         </div>
         <button class="btn primary full" type="button" data-action="save-form">Save recipe</button>
       </form>
     </section>
   `;
   attachFormEvents();
+  renderIngredientList();
+  renderStepList();
 }
 
 function updatePreview() {
   const name = document.getElementById("nameInput")?.value || "New Dish";
-  const shape = document.getElementById("shapeValue")?.value || "circle";
   const plate = document.getElementById("plateValue")?.value || "checker";
-  const recipe = { name, emoji: "🍽️", shape, plate, photo: state.formPhoto };
+  const recipe = { name, emoji: "🍽️", plate, photo: state.formPhoto };
   const preview = document.getElementById("previewPlate");
   if (preview) preview.innerHTML = plateHtml(recipe, "preview");
 }
 
 function attachFormEvents() {
   document.getElementById("nameInput")?.addEventListener("input", updatePreview);
+  document.getElementById("ingredientNameInput")?.addEventListener("input", renderIngredientSuggestions);
+  document.getElementById("ingredientNameInput")?.addEventListener("keydown", event => {
+    if (event.key === "Enter") { event.preventDefault(); addIngredientFromFields(); }
+  });
+  document.getElementById("ingredientAmountInput")?.addEventListener("keydown", event => {
+    if (event.key === "Enter") { event.preventDefault(); addIngredientFromFields(); }
+  });
+  document.getElementById("ingredientNoteInput")?.addEventListener("keydown", event => {
+    if (event.key === "Enter") { event.preventDefault(); addIngredientFromFields(); }
+  });
   document.getElementById("photoInput")?.addEventListener("change", async event => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -418,6 +562,115 @@ function attachFormEvents() {
       toast("Could not read photo");
     }
   });
+}
+
+function renderIngredientSuggestions() {
+  const input = document.getElementById("ingredientNameInput");
+  const box = document.getElementById("ingredientSuggestions");
+  if (!input || !box) return;
+  const suggestions = ingredientSuggestions(input.value);
+  box.innerHTML = suggestions.map(name => `<button type="button" class="suggestion-chip" data-ingredient-suggestion="${h(name)}">${h(name)}</button>`).join("");
+}
+
+function renderIngredientList() {
+  const list = document.getElementById("ingredientList");
+  if (!list) return;
+  list.innerHTML = state.formIngredients.length ? state.formIngredients.map((item, index) => `
+    <div class="builder-row">
+      <button type="button" class="row-main" data-action="edit-ingredient" data-index="${index}">
+        <b>${h(formatIngredient(item))}</b>
+        ${item.note ? `<small>${h(item.note)}</small>` : ""}
+      </button>
+      <button type="button" class="row-delete" data-action="remove-ingredient" data-index="${index}" aria-label="Remove ${h(item.name)}">×</button>
+    </div>
+  `).join("") : `<div class="empty-inline">No ingredients added yet.</div>`;
+}
+
+function renderStepList() {
+  const list = document.getElementById("stepList");
+  if (!list) return;
+  list.innerHTML = state.formSteps.length ? state.formSteps.map((step, index) => `
+    <div class="builder-row step-row">
+      <button type="button" class="row-main" data-action="edit-step" data-index="${index}">
+        <span class="step-number">${index + 1}</span>
+        <b>${h(step)}</b>
+      </button>
+      <button type="button" class="row-delete" data-action="remove-step" data-index="${index}" aria-label="Remove step ${index + 1}">×</button>
+    </div>
+  `).join("") : `<div class="empty-inline">No method steps added yet.</div>`;
+}
+
+function addIngredientFromFields() {
+  const nameInput = document.getElementById("ingredientNameInput");
+  const amountInput = document.getElementById("ingredientAmountInput");
+  const unitInput = document.getElementById("ingredientUnitInput");
+  const noteInput = document.getElementById("ingredientNoteInput");
+  const item = {
+    amount: amountInput.value.trim(),
+    unit: unitInput.value.trim(),
+    name: titleCase(nameInput.value.trim()),
+    note: noteInput.value.trim(),
+  };
+  if (!item.name) {
+    toast("Ingredient name is required");
+    nameInput.focus();
+    return false;
+  }
+  const duplicateIndex = state.formIngredients.findIndex(x => x.name.toLowerCase() === item.name.toLowerCase());
+  if (duplicateIndex >= 0) {
+    const ok = confirm(`${item.name} is already added. Replace the existing ingredient?`);
+    if (!ok) return false;
+    state.formIngredients[duplicateIndex] = item;
+  } else {
+    state.formIngredients.push(item);
+  }
+  nameInput.value = "";
+  amountInput.value = "";
+  unitInput.value = "";
+  noteInput.value = "";
+  renderIngredientSuggestions();
+  renderIngredientList();
+  nameInput.focus();
+  return true;
+}
+
+function addStepFromField() {
+  const input = document.getElementById("methodStepInput");
+  const step = input.value.trim();
+  if (!step) {
+    toast("Step text is required");
+    input.focus();
+    return false;
+  }
+  state.formSteps.push(step);
+  input.value = "";
+  renderStepList();
+  input.focus();
+  return true;
+}
+
+function importPastedIngredients() {
+  const input = document.getElementById("ingredientPasteInput");
+  const items = lineArray(input.value).map(parseIngredientLine).filter(item => item.name);
+  if (!items.length) return toast("Paste at least one ingredient");
+  for (const item of items) {
+    const existing = state.formIngredients.findIndex(x => x.name.toLowerCase() === item.name.toLowerCase());
+    if (existing >= 0) state.formIngredients[existing] = item;
+    else state.formIngredients.push(item);
+  }
+  input.value = "";
+  renderIngredientList();
+  toast(`${items.length} ingredient${items.length === 1 ? "" : "s"} added`);
+}
+
+function importPastedSteps() {
+  const input = document.getElementById("methodPasteInput");
+  const steps = lineArray(input.value);
+  if (!steps.length) return toast("Paste at least one step");
+  state.formSteps.push(...steps);
+  input.value = "";
+  renderStepList();
+  toast(`${steps.length} step${steps.length === 1 ? "" : "s"} added`);
 }
 
 async function compressImage(file) {
@@ -447,8 +700,16 @@ async function saveForm() {
     document.getElementById("nameInput").focus();
     return;
   }
+
+  const ingredientDraft = document.getElementById("ingredientNameInput")?.value.trim();
+  if (ingredientDraft) addIngredientFromFields();
+  const stepDraft = document.getElementById("methodStepInput")?.value.trim();
+  if (stepDraft) addStepFromField();
+
   const labels = [...document.querySelectorAll("[data-label-chip].active")].map(btn => btn.dataset.labelChip).filter(Boolean);
   const now = new Date().toISOString();
+  const ingredientsList = state.formIngredients.filter(item => item.name);
+  const methodSteps = state.formSteps.filter(Boolean);
   const recipe = {
     id,
     name,
@@ -456,11 +717,13 @@ async function saveForm() {
     cuisine: document.getElementById("cuisineInput").value.trim(),
     prep: document.getElementById("prepInput").value.trim(),
     cook: document.getElementById("cookInput").value.trim(),
-    serves: Number(document.getElementById("servesOutput").textContent) || 1,
-    ingredients: document.getElementById("ingredientsInput").value.trim(),
-    method: document.getElementById("methodInput").value.trim(),
+    serves: "",
+    ingredientsList,
+    methodSteps,
+    ingredients: ingredientsList.map(formatIngredient).filter(Boolean).join("\n"),
+    method: methodSteps.join("\n"),
     notes: document.getElementById("notesInput").value.trim(),
-    shape: document.getElementById("shapeValue").value || "circle",
+    shape: "circle",
     plate: document.getElementById("plateValue").value || "checker",
     photo: state.formPhoto || "",
     emoji: existing?.emoji || "",
@@ -571,7 +834,7 @@ async function markCooked(id) {
 async function addRecipeIngredientsToShopping(id) {
   const recipe = state.recipes.find(r => r.id === id);
   if (!recipe) return;
-  const ingredients = lineArray(recipe.ingredients);
+  const ingredients = getRecipeIngredients(recipe).map(formatIngredient).filter(Boolean);
   if (!ingredients.length) return toast("No ingredients to add");
   const existing = new Set(state.shopping.map(item => item.text.toLowerCase()));
   let added = 0;
@@ -622,7 +885,7 @@ function exportData(includePhotos = true) {
   const recipes = state.recipes.map(recipe => includePhotos ? recipe : { ...recipe, photo: "" });
   downloadJson(`recipe-keeper-${includePhotos ? "full" : "text"}-${new Date().toISOString().slice(0, 10)}.json`, {
     app: "Recipe Keeper",
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     includesPhotos: includePhotos,
     recipes,
@@ -642,7 +905,19 @@ async function importBackupFile(file) {
   }
   for (const recipe of data.recipes) {
     if (!recipe.name) continue;
-    await putItem("recipes", { ...recipe, id: recipe.id || uid(), updatedAt: recipe.updatedAt || new Date().toISOString() });
+    const ingredientsList = getRecipeIngredients(recipe);
+    const methodSteps = getRecipeSteps(recipe);
+    await putItem("recipes", {
+      ...recipe,
+      id: recipe.id || uid(),
+      shape: "circle",
+      serves: "",
+      ingredientsList,
+      methodSteps,
+      ingredients: ingredientsList.map(formatIngredient).filter(Boolean).join("\n"),
+      method: methodSteps.join("\n"),
+      updatedAt: recipe.updatedAt || new Date().toISOString()
+    });
   }
   if (Array.isArray(data.shopping)) {
     for (const item of data.shopping) {
@@ -657,17 +932,18 @@ async function importBackupFile(file) {
 }
 
 app.addEventListener("click", async event => {
-  const target = event.target.closest("[data-action], [data-shape], [data-plate], [data-label-chip]");
+  const target = event.target.closest("[data-action], [data-plate], [data-label-chip], [data-ingredient-suggestion]");
   if (!target) return;
 
   if (target.dataset.labelChip) {
     target.classList.toggle("active");
     return;
   }
-  if (target.dataset.shape) {
-    document.getElementById("shapeValue").value = target.dataset.shape;
-    document.querySelectorAll("[data-shape]").forEach(btn => btn.classList.toggle("active", btn === target));
-    updatePreview();
+  if (target.dataset.ingredientSuggestion) {
+    const input = document.getElementById("ingredientNameInput");
+    input.value = target.dataset.ingredientSuggestion;
+    document.getElementById("ingredientSuggestions").innerHTML = "";
+    input.focus();
     return;
   }
   if (target.dataset.plate) {
@@ -677,7 +953,7 @@ app.addEventListener("click", async event => {
     return;
   }
 
-  const { action, id, view, label, tab } = target.dataset;
+  const { action, id, view, label, tab, index, target: targetId } = target.dataset;
   if (action === "open") { state.view = "detail"; renderDetail(id); }
   if (action === "back-home") { state.view = "home"; renderHome(); }
   if (action === "nav") { state.view = view; if (view === "home") state.activeLabel = "All"; render(); }
@@ -700,11 +976,6 @@ app.addEventListener("click", async event => {
       renderHome();
     }
   }
-  if (action === "serves-minus" || action === "serves-plus") {
-    const output = document.getElementById("servesOutput");
-    const value = Math.max(1, Number(output.textContent) + (action === "serves-plus" ? 1 : -1));
-    output.textContent = value;
-  }
   if (action === "add-label") {
     const labelName = prompt("New label name");
     if (!labelName?.trim()) return;
@@ -713,6 +984,28 @@ app.addEventListener("click", async event => {
     const exists = [...wrap.querySelectorAll("[data-label-chip]")].some(btn => btn.dataset.labelChip.toLowerCase() === label.toLowerCase());
     if (!exists) target.insertAdjacentHTML("beforebegin", `<button type="button" class="label-chip active" data-label-chip="${h(label)}">${h(label)}</button>`);
   }
+  if (action === "toggle-paste") document.getElementById(targetId)?.classList.toggle("hidden");
+  if (action === "add-ingredient") addIngredientFromFields();
+  if (action === "remove-ingredient") { state.formIngredients.splice(Number(index), 1); renderIngredientList(); }
+  if (action === "edit-ingredient") {
+    const item = state.formIngredients.splice(Number(index), 1)[0];
+    document.getElementById("ingredientNameInput").value = item.name || "";
+    document.getElementById("ingredientAmountInput").value = item.amount || "";
+    document.getElementById("ingredientUnitInput").value = item.unit || "";
+    document.getElementById("ingredientNoteInput").value = item.note || "";
+    renderIngredientList();
+    document.getElementById("ingredientNameInput").focus();
+  }
+  if (action === "import-ingredients") importPastedIngredients();
+  if (action === "add-step") addStepFromField();
+  if (action === "remove-step") { state.formSteps.splice(Number(index), 1); renderStepList(); }
+  if (action === "edit-step") {
+    const step = state.formSteps.splice(Number(index), 1)[0];
+    document.getElementById("methodStepInput").value = step;
+    renderStepList();
+    document.getElementById("methodStepInput").focus();
+  }
+  if (action === "import-steps") importPastedSteps();
   if (action === "list-tab") { state.listTab = tab; renderShopping(); }
   if (action === "add-item") await addShoppingItem();
   if (action === "toggle-item") {
