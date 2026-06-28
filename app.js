@@ -192,6 +192,7 @@ function icon(name) {
     close: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>',
     check: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m5 13 4 4L19 7"/></svg>',
     camera: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2v11Z"/><circle cx="12" cy="13" r="4"/></svg>',
+    sort: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v14"/><path d="m4 15 3 3 3-3"/><path d="M17 20V6"/><path d="m14 9 3-3 3 3"/></svg>',
     edit: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/></svg>',
   };
   return icons[name] || "";
@@ -344,7 +345,7 @@ function renderHome() {
           <h1>My menu</h1>
           <p class="subtitle">A visual cookbook for your home-cooked dishes.</p>
         </div>
-        <button class="icon-btn" data-action="sort" aria-label="Change sort order">${state.sort === "name" ? "A↓" : "↕"}</button>
+        <button class="icon-btn sort-btn" data-action="sort" aria-label="Change sort order" title="Sort recipes">${icon("sort")}</button>
       </div>
       <div class="search-wrap">
         ${icon("search")}
@@ -377,11 +378,7 @@ function detailHtml(recipe) {
       </div>
       ${plateHtml(recipe, "hero")}
       <h2 class="hero-title">${h(recipe.name)}</h2>
-      <div class="hero-meta">${h(labels || recipe.cuisine || "Recipe")}</div>
-      <div class="stat-grid two">
-        <div class="stat"><b>${h(recipe.prep || "—")}</b><span>Prep</span></div>
-        <div class="stat"><b>${h(recipe.cook || "—")}</b><span>Cook</span></div>
-      </div>
+      <div class="hero-meta">${h([labels || recipe.cuisine || "Recipe", recipe.cook ? `Cook ${recipe.cook}` : ""].filter(Boolean).join(" · "))}</div>
       <div class="card">
         <div class="section-head">
           <div class="section-title" style="margin:0">Ingredients</div>
@@ -450,9 +447,6 @@ function renderForm(id = null) {
         </div>
         <div class="form-section form-grid">
           <div><label for="cuisineInput">Cuisine</label><input id="cuisineInput" placeholder="e.g. Indian" value="${h(recipe?.cuisine || "")}" /></div>
-          <div><label for="prepInput">Prep time</label><input id="prepInput" placeholder="20 min" value="${h(recipe?.prep || "")}" /></div>
-        </div>
-        <div class="form-section form-grid one-plus">
           <div><label for="cookInput">Cook time</label><input id="cookInput" placeholder="40 min" value="${h(recipe?.cook || "")}" /></div>
         </div>
         <div class="form-section">
@@ -463,11 +457,8 @@ function renderForm(id = null) {
         </div>
 
         <div class="builder-card" id="ingredientBuilder">
-          <div class="builder-head">
-            <div>
-              <div class="section-title mini">Ingredients</div>
-              <p class="small-muted">Add structured rows to avoid spelling and shopping-list errors.</p>
-            </div>
+          <div class="builder-head compact-builder-head">
+            <div class="section-title mini">Ingredients</div>
             <button type="button" class="mini-link" data-action="toggle-paste" data-target="ingredientPasteBox">Quick paste</button>
           </div>
           <div id="ingredientPasteBox" class="paste-box hidden">
@@ -500,11 +491,8 @@ function renderForm(id = null) {
         </div>
 
         <div class="builder-card">
-          <div class="builder-head">
-            <div>
-              <div class="section-title mini">Method</div>
-              <p class="small-muted">Add one clear cooking step at a time.</p>
-            </div>
+          <div class="builder-head compact-builder-head">
+            <div class="section-title mini">Method</div>
             <button type="button" class="mini-link" data-action="toggle-paste" data-target="methodPasteBox">Quick paste</button>
           </div>
           <div id="methodPasteBox" class="paste-box hidden">
@@ -715,7 +703,7 @@ async function saveForm() {
     name,
     labels: labels.length ? labels : ["Main"],
     cuisine: document.getElementById("cuisineInput").value.trim(),
-    prep: document.getElementById("prepInput").value.trim(),
+    prep: "",
     cook: document.getElementById("cookInput").value.trim(),
     serves: "",
     ingredientsList,
@@ -885,7 +873,7 @@ function exportData(includePhotos = true) {
   const recipes = state.recipes.map(recipe => includePhotos ? recipe : { ...recipe, photo: "" });
   downloadJson(`recipe-keeper-${includePhotos ? "full" : "text"}-${new Date().toISOString().slice(0, 10)}.json`, {
     app: "Recipe Keeper",
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     includesPhotos: includePhotos,
     recipes,

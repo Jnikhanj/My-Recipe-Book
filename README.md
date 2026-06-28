@@ -5,9 +5,9 @@ A local-first visual recipe app for iPhone Safari, designed to be hosted free on
 ## What it does
 
 - Home screen shows recipes as a plate-style visual grid.
-- Add/edit recipes with photo, compact labels and plate backdrop.
+- Add/edit recipes with photo, compact labels, cuisine, cook time and plate backdrop.
 - Round dish/plate shape is used as the default; the separate shape picker has been removed.
-- Serves has been removed from the add/edit form to keep the entry screen faster.
+- Serves and prep time have been removed from the add/edit form to keep the entry screen faster.
 - Ingredients are added as structured rows: ingredient, amount, unit and note.
 - Ingredient suggestions appear while typing, using common ingredients and ingredients already saved in your recipes.
 - Quick paste can import ingredient lines, for example `500g chicken`, `1 cup yoghurt`, or `Salt to taste`.
@@ -41,8 +41,18 @@ A local-first visual recipe app for iPhone Safari, designed to be hosted free on
 
 ## Updating an existing GitHub Pages app
 
-Replace the existing files in your repository with these updated files. The service worker cache name has been updated to `recipe-keeper-v2`, so Safari should refresh the app after the new files are deployed. If the old screen still appears, close the app, reopen the Safari URL, refresh once, then open it from the Home Screen again.
+Replace the existing files in your repository with these updated files. The service worker cache name has been updated to `recipe-keeper-v3`, so Safari should refresh the app after the new files are deployed. If the old screen still appears, close the app, reopen the Safari URL, refresh once, then open it from the Home Screen again.
 
 ## Important backup note
 
 Recipes are stored locally in Safari on the device. GitHub only hosts the app files. Export a backup regularly from the Backup screen, especially before clearing Safari website data or changing phones.
+
+## v3 refinement notes
+
+- Prep time removed; cook time now sits beside cuisine.
+- Recipe detail plate reduced in size.
+- Bottom navigation is fixed to the bottom edge instead of floating as a pill.
+- Home grid plate sizing is fixed/consistent so rows align better.
+- Sort control now uses a clean SVG icon instead of emoji/text.
+- Ingredient and method helper wording removed for a cleaner add screen.
+- Overall spacing, chip size and visual density have been tightened.

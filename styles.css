@@ -586,3 +586,249 @@ h1 {
   .ingredient-fields { grid-template-columns: 1fr 82px 94px; gap: 8px; }
   .one-plus { max-width: 100%; }
 }
+
+/* v3 refinements: fixed bottom nav, compact visual density and cleaner recipe entry */
+.app-shell {
+  padding: calc(14px + var(--safe-top)) 16px calc(92px + var(--safe-bottom));
+}
+.form-shell {
+  padding-bottom: calc(98px + var(--safe-bottom));
+}
+.toolbar {
+  padding: calc(8px + var(--safe-top)) 0 12px;
+  margin: calc(-14px - var(--safe-top)) 0 8px;
+}
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  font-size: 18px;
+}
+.sort-btn svg {
+  width: 22px;
+  height: 22px;
+}
+h1 {
+  margin: 10px 0 4px;
+  font-size: clamp(31px, 8.8vw, 45px);
+  letter-spacing: -.052em;
+}
+.subtitle {
+  margin: 0 0 14px;
+  font-size: 16px;
+}
+.search-wrap {
+  margin: 12px 0 14px;
+}
+.search-wrap input,
+input,
+textarea,
+select {
+  border-radius: 16px;
+  padding: 13px 14px;
+}
+.search-wrap input {
+  padding-left: 43px;
+}
+.chips {
+  gap: 8px;
+  padding-bottom: 10px;
+}
+.chip {
+  min-height: 38px;
+  padding: 8px 13px;
+  font-size: 13px;
+}
+.recipe-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  justify-items: center;
+  align-items: start;
+  gap: 19px 8px;
+  padding-top: 6px;
+}
+.recipe-tile {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.plate.tile {
+  width: clamp(88px, 26vw, 106px);
+  max-width: none;
+  flex: 0 0 auto;
+}
+.tile-name {
+  margin-top: 7px;
+  font-size: 14px;
+  line-height: 1.12;
+}
+.tile-meta {
+  font-size: 12px;
+  min-height: 28px;
+}
+.favorite-dot {
+  right: auto;
+  left: calc(50% + min(41px, 12.5vw));
+  top: 0;
+  width: 23px;
+  height: 23px;
+  font-size: 14px;
+}
+.plate.hero {
+  width: min(210px, 56vw);
+  margin: 8px auto 8px;
+}
+.plate.preview {
+  width: min(150px, 42vw);
+}
+.plate.hero .dish-img {
+  font-size: 44px;
+}
+.hero-title {
+  font-size: 30px;
+  margin-top: 0;
+}
+.hero-meta {
+  font-size: 15px;
+  line-height: 1.25;
+  margin: 7px 0 16px;
+}
+.card {
+  border-radius: 24px;
+  padding: 16px;
+}
+.section-title {
+  font-size: 17px;
+  margin: 19px 0 10px;
+}
+.bottom-nav {
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: min(520px, 100%);
+  height: calc(72px + var(--safe-bottom));
+  grid-template-columns: 1fr 1fr 72px 1fr 1fr;
+  align-items: center;
+  padding: 6px 14px calc(6px + var(--safe-bottom));
+  border-radius: 24px 24px 0 0;
+  border-left: 1px solid rgba(230,217,202,.85);
+  border-right: 1px solid rgba(230,217,202,.85);
+  border-bottom: 0;
+  background: rgba(255,253,247,.94);
+  box-shadow: 0 -10px 34px rgba(54,26,8,.12);
+}
+.nav-item {
+  height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  line-height: 1;
+  text-align: center;
+}
+.nav-item svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+.nav-item span {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+.add-button {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto;
+  align-self: center;
+  box-shadow: 0 8px 18px rgba(122,63,8,.24);
+}
+.add-button svg {
+  width: 28px;
+  height: 28px;
+}
+.photo-edit.compact-photo {
+  width: min(148px, 40vw);
+  margin: 0 auto 16px;
+}
+.photo-edit .photo-pick,
+.compact-photo .photo-pick {
+  width: 44px;
+  height: 44px;
+}
+.form-section {
+  margin-top: 15px;
+}
+.form-section.tight {
+  margin-top: 12px;
+}
+.form-section label,
+.field-label {
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+.form-grid {
+  gap: 12px;
+}
+.label-wrap.compact-labels {
+  gap: 8px;
+  padding-bottom: 6px;
+}
+.compact-labels .label-chip {
+  min-height: 34px;
+  padding: 7px 12px;
+  font-size: 13px;
+}
+.plate-option {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+}
+.plate-option .plate {
+  width: 44px;
+}
+.builder-card {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 23px;
+}
+.builder-head,
+.compact-builder-head {
+  align-items: center;
+  margin-bottom: 11px;
+}
+.section-title.mini {
+  margin: 0;
+  font-size: 17px;
+}
+.builder-head .small-muted {
+  display: none;
+}
+.ingredient-fields {
+  grid-template-columns: 1fr 84px 92px;
+  gap: 9px;
+}
+.ingredient-fields input,
+.ingredient-fields select {
+  padding: 12px 13px;
+}
+.step-input {
+  min-height: 74px;
+}
+.action-row {
+  gap: 9px;
+}
+.btn {
+  min-height: 48px;
+  border-radius: 16px;
+  padding: 11px 14px;
+}
+.toast {
+  bottom: calc(86px + var(--safe-bottom));
+}
+@media (max-width: 360px) {
+  .app-shell { padding-left: 14px; padding-right: 14px; }
+  .plate.tile { width: clamp(84px, 25vw, 98px); }
+  .ingredient-fields { grid-template-columns: 1fr 78px 88px; }
+  .bottom-nav { padding-left: 10px; padding-right: 10px; }
+}
