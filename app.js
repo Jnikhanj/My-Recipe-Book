@@ -656,27 +656,31 @@ function renderForm(id = null) {
             <input id="photoInput" type="file" accept="image/*" hidden />
           </label>
         </div>
-        <div class="form-section tight">
-          <label for="nameInput">Dish name</label>
-          <input id="nameInput" required maxlength="80" placeholder="Dish name (required)" value="${h(recipe?.name || "")}" />
-        </div>
-        <div class="form-section tight">
-          <div class="field-label">Labels</div>
-          <div id="labelWrap" class="label-wrap compact-labels">${formLabelsHtml(selectedLabels)}</div>
-        </div>
-        <div class="form-section details-grid">
-          <div><label for="cuisineInput">Cuisine</label><input id="cuisineInput" placeholder="e.g. Indian" value="${h(recipe?.cuisine || "")}" /></div>
-          <div><label for="cookInput">Cook time</label><input id="cookInput" placeholder="40 min" value="${h(recipe?.cook || "")}" /></div>
-          <div><label for="portionInput">Portions</label><div class="mini-stepper"><button type="button" data-action="form-portion-minus">−</button><input id="portionInput" inputmode="numeric" value="${h(getBasePortions(recipe || { portions: 2 }))}" /><button type="button" data-action="form-portion-plus">+</button></div></div>
-        </div>
-        <div class="form-section">
-          <div class="field-label">Plate backdrop</div>
-          <div class="plate-row">
-            ${PLATES.map(p => `<button type="button" class="plate-option ${plate === p.id ? "active" : ""}" title="${h(p.label)}" data-plate="${h(p.id)}"><span class="plate plate-${h(p.id)}"><span class="dish-img shape-circle" style="width:48%;height:48%;font-size:12px"> </span></span></button>`).join("")}
+
+        <div class="form-card basic-card">
+          <div class="form-card-title">Basic details</div>
+          <div class="form-section tight first">
+            <label for="nameInput">Dish name</label>
+            <input id="nameInput" required maxlength="80" placeholder="e.g. Butter Chicken" value="${h(recipe?.name || "")}" />
+          </div>
+          <div class="form-section tight">
+            <div class="field-label">Labels</div>
+            <div id="labelWrap" class="label-wrap compact-labels">${formLabelsHtml(selectedLabels)}</div>
+          </div>
+          <div class="form-section details-grid">
+            <div><label for="cuisineInput">Cuisine</label><input id="cuisineInput" placeholder="e.g. Indian" value="${h(recipe?.cuisine || "")}" /></div>
+            <div><label for="cookInput">Cook time</label><input id="cookInput" placeholder="40 min" value="${h(recipe?.cook || "")}" /></div>
+            <div><label for="portionInput">Portions</label><div class="mini-stepper"><button type="button" data-action="form-portion-minus">−</button><input id="portionInput" inputmode="numeric" value="${h(getBasePortions(recipe || { portions: 2 }))}" /><button type="button" data-action="form-portion-plus">+</button></div></div>
+          </div>
+          <div class="form-section plate-style-section">
+            <div class="field-label">Plate style</div>
+            <div class="plate-row compact-plate-row">
+              ${PLATES.map(p => `<button type="button" class="plate-option ${plate === p.id ? "active" : ""}" title="${h(p.label)}" data-plate="${h(p.id)}"><span class="plate plate-${h(p.id)}"><span class="dish-img shape-circle" style="width:48%;height:48%;font-size:12px"> </span></span></button>`).join("")}
+            </div>
           </div>
         </div>
 
-        <div class="builder-card" id="ingredientBuilder">
+        <div class="builder-card cleaner-builder" id="ingredientBuilder">
           <div class="builder-head compact-builder-head">
             <div class="section-title mini">Ingredients</div>
             <div class="builder-actions">
@@ -715,7 +719,7 @@ function renderForm(id = null) {
           <div id="ingredientList" class="ingredient-list"></div>
         </div>
 
-        <div class="builder-card">
+        <div class="builder-card cleaner-builder">
           <div class="builder-head compact-builder-head">
             <div class="section-title mini">Method</div>
             <div class="builder-actions">
@@ -733,11 +737,11 @@ function renderForm(id = null) {
           <div id="stepList" class="step-list"></div>
         </div>
 
-        <div class="form-section">
+        <div class="form-card notes-card">
           <label for="notesInput">Notes</label>
           <textarea id="notesInput" placeholder="Optional changes, family preferences, reminders">${h(recipe?.notes || "")}</textarea>
         </div>
-        <button class="btn primary full" type="button" data-action="save-form">Save recipe</button>
+        <button class="btn primary full save-bottom-btn" type="button" data-action="save-form">Save recipe</button>
       </form>
     </section>
   `;
