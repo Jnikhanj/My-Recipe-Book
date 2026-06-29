@@ -1577,3 +1577,359 @@ body[data-density="compact"] .card {
   .recipe-tile { min-height: 148px; }
   .sort-menu { right: -2px; }
 }
+
+/* v7 visual clean-up: fixed recipe tile rhythm, centered nav, and lighter add/edit form */
+:root {
+  --control-radius: 13px;
+  --card-radius: 20px;
+}
+
+/* Home grid: strict tile rhythm so long dish names never overlap metadata */
+.recipe-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px 10px;
+}
+.recipe-tile {
+  width: 100%;
+  min-height: 172px;
+  display: grid;
+  grid-template-rows: 112px 42px 18px;
+  justify-items: center;
+  align-items: start;
+  align-content: start;
+  padding: 0 2px;
+  position: relative;
+}
+.plate.tile {
+  width: 108px;
+  max-width: 100%;
+  grid-row: 1;
+}
+.tile-name {
+  grid-row: 2;
+  width: 100%;
+  min-height: 0;
+  height: 38px;
+  margin: 7px 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.12;
+  letter-spacing: -.015em;
+}
+.tile-meta {
+  grid-row: 3;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  text-align: center;
+  line-height: 1.1;
+}
+.favorite-dot {
+  left: auto;
+  right: calc(50% - 54px);
+  top: 0;
+  z-index: 5;
+}
+
+/* Bottom navigation: true 5 equal columns and exact center plus button */
+.bottom-nav {
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  transform: none;
+  width: min(520px, 100vw);
+  grid-template-columns: repeat(5, 20%);
+  justify-items: stretch;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+.nav-item {
+  justify-self: stretch;
+  align-self: center;
+}
+.add-button {
+  justify-self: center;
+  align-self: center;
+  margin: 0;
+  transform: translateX(0);
+}
+
+/* Add/edit page: less bulky iOS-style cards and smaller controls */
+.form-shell {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+.form-shell .toolbar {
+  margin-bottom: 6px;
+}
+.form-shell .toolbar-title {
+  font-size: 17px;
+}
+.form-shell .icon-btn {
+  width: 42px;
+  height: 42px;
+}
+.photo-edit.compact-photo {
+  width: min(126px, 34vw);
+  margin: 0 auto 12px;
+}
+.photo-edit .photo-pick,
+.compact-photo .photo-pick {
+  width: 39px;
+  height: 39px;
+}
+.plate.preview {
+  width: min(126px, 34vw);
+  margin: 0 auto;
+}
+
+.form-card,
+.builder-card.cleaner-builder,
+.notes-card {
+  background: rgba(255,253,247,.62);
+  border: 1px solid rgba(230,217,202,.78);
+  border-radius: var(--card-radius);
+  padding: 14px;
+  box-shadow: 0 8px 22px rgba(54,26,8,.045);
+  margin-top: 14px;
+}
+.form-card-title {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -.02em;
+  margin: 0 0 12px;
+}
+.form-section.first { margin-top: 0; }
+.form-section,
+.form-section.tight {
+  margin-top: 12px;
+}
+.form-section label,
+.field-label,
+.ingredient-fields label,
+.builder-card > label,
+.notes-card > label {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: .02em;
+  text-transform: none;
+  font-weight: 850;
+  margin-bottom: 7px;
+}
+.form-shell input,
+.form-shell textarea,
+.form-shell select {
+  border-radius: var(--control-radius);
+  padding: 11px 12px;
+  min-height: 44px;
+  background: rgba(255,255,255,.76);
+}
+.form-shell textarea {
+  min-height: 92px;
+}
+.form-grid,
+.details-grid {
+  gap: 10px;
+}
+.details-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 116px;
+}
+.details-grid input { min-height: 44px; }
+.mini-stepper {
+  height: 44px;
+  border-radius: var(--control-radius);
+  grid-template-columns: 32px 1fr 32px;
+}
+.mini-stepper input {
+  height: 44px;
+}
+
+.compact-labels {
+  gap: 7px;
+  padding-bottom: 4px;
+}
+.compact-labels .label-chip {
+  min-height: 31px;
+  padding: 7px 11px;
+  font-size: 12px;
+  border-radius: 999px;
+}
+.compact-labels .add-label {
+  width: 34px;
+}
+
+.plate-style-section {
+  margin-top: 13px;
+}
+.compact-plate-row,
+.plate-row.compact-plate-row {
+  gap: 8px;
+  padding: 1px 2px 2px;
+}
+.plate-option {
+  width: 49px;
+  height: 49px;
+  border-radius: 14px;
+  border-width: 2px;
+}
+.plate-option .plate {
+  width: 37px;
+}
+
+.cleaner-builder {
+  padding: 14px;
+}
+.cleaner-builder .builder-head {
+  margin-bottom: 10px;
+}
+.section-title.mini {
+  font-size: 18px;
+  letter-spacing: -.025em;
+}
+.builder-actions {
+  gap: 6px;
+}
+.mini-link {
+  min-height: 31px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: rgba(255,255,255,.58);
+}
+.paste-box {
+  margin: 9px 0 12px;
+  padding: 10px;
+  border-radius: 16px;
+}
+.paste-box textarea {
+  min-height: 92px;
+}
+.ingredient-fields {
+  grid-template-columns: minmax(0, 1fr) 88px 86px;
+  gap: 8px;
+}
+.ingredient-fields input,
+.ingredient-fields select {
+  border-radius: var(--control-radius);
+  padding: 10px 11px;
+}
+.scale-toggle {
+  min-height: 44px;
+  border-radius: var(--control-radius);
+  font-size: 12px !important;
+  gap: 5px;
+}
+.scale-toggle input {
+  width: 16px;
+  height: 16px;
+}
+.amount-pills {
+  gap: 6px;
+  padding: 0;
+}
+.amount-chip {
+  min-height: 28px;
+  padding: 5px 9px;
+  border-radius: 10px;
+  font-size: 12px;
+  background: rgba(255,255,255,.55);
+}
+.btn {
+  min-height: 44px;
+  border-radius: 14px;
+}
+.btn.full {
+  margin-top: 10px;
+}
+.btn.dark.full {
+  border-radius: 14px;
+  box-shadow: 0 8px 18px rgba(122,63,8,.16);
+}
+.empty-inline {
+  border-radius: 13px;
+  padding: 11px 12px;
+}
+.ingredient-list,
+.step-list {
+  gap: 8px;
+  margin-top: 10px;
+}
+.builder-row.clean-row {
+  grid-template-columns: minmax(0, 1fr) 34px;
+  gap: 7px;
+}
+.clean-row .row-main {
+  min-height: 50px;
+  border-radius: 14px;
+  padding: 9px 11px;
+}
+.row-main b {
+  font-size: 13px;
+}
+.row-main small {
+  font-size: 12px;
+}
+.row-delete {
+  border-radius: 13px;
+  font-size: 19px;
+}
+.drag-handle {
+  min-height: 50px;
+  border-radius: 14px;
+  font-size: 20px;
+}
+.reorder-main {
+  min-height: 50px;
+}
+.step-input {
+  min-height: 72px !important;
+}
+.notes-card textarea {
+  min-height: 76px;
+}
+.save-bottom-btn {
+  margin-bottom: 6px;
+}
+
+/* Lighter detail action bar so Safari bottom toolbar has breathing room */
+.action-row {
+  bottom: calc(76px + var(--safe-bottom));
+  grid-template-columns: 1fr 1fr;
+}
+
+/* Small screens */
+@media (max-width: 390px) {
+  .recipe-grid { gap: 18px 8px; }
+  .recipe-tile {
+    min-height: 164px;
+    grid-template-rows: 104px 42px 18px;
+  }
+  .plate.tile { width: 100px; }
+  .tile-name { font-size: 13.5px; }
+  .favorite-dot { right: calc(50% - 50px); }
+  .details-grid { grid-template-columns: 1fr 1fr; }
+  .details-grid > div:nth-child(3) { grid-column: 1 / -1; }
+  .ingredient-fields { grid-template-columns: 1fr 82px 78px; gap: 7px; }
+  .mini-link { padding-left: 8px; padding-right: 8px; }
+}
+
+body[data-density="compact"] .recipe-tile {
+  min-height: 152px;
+  grid-template-rows: 96px 38px 17px;
+}
+body[data-density="compact"] .plate.tile { width: 94px; }
+body[data-density="compact"] .tile-name { height: 34px; }
+body[data-density="compact"] .form-card,
+body[data-density="compact"] .builder-card.cleaner-builder,
+body[data-density="compact"] .notes-card {
+  padding: 12px;
+  border-radius: 18px;
+}
+body[data-density="compact"] .photo-edit.compact-photo,
+body[data-density="compact"] .plate.preview {
+  width: min(112px, 31vw);
+}

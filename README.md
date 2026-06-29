@@ -21,18 +21,14 @@ A local-first visual recipe app for iPhone Safari, designed to be hosted free on
 - Settings includes theme selection, display density, backup, restore and data management.
 - Works as a PWA: open in Safari, then use Share > Add to Home Screen.
 
-## v6 design refinements
+## v7 design refinements
 
-- Home header is more compact.
-- Recipe grid has more consistent tile height and plate sizing.
-- Recipe cards now show cleaner text such as `Cooked 3x`.
-- Added a Recently Cooked row on the home screen.
-- Added a cleaner sort menu with Newest, A-Z, Most cooked, Favourites first and Cuisine sorting.
-- Recipe detail page uses a smaller hero plate so ingredients and method are easier to access.
-- Added Display Density in Settings: Comfortable or Compact.
-- Settings icons are now consistent SVG icons instead of emoji-style icons.
-- Empty states are cleaner and context-aware.
-- Plate picker and section spacing have been visually tightened.
+- Fixed recipe tile rhythm so long names such as `Mango Sticky Rice` no longer overlap metadata.
+- Re-centred the bottom navigation plus button using a strict five-column layout.
+- Made the add/edit page cleaner and less bulky with smaller controls, softer cards and reduced pill styling.
+- Grouped basic details into a cleaner form card.
+- Tightened plate style, ingredient, fraction and scale controls.
+- Kept the v6 refinements: recently cooked, sort menu, display density, themes, scalable portions and drag reorder mode.
 
 ## Files
 
@@ -56,7 +52,7 @@ A local-first visual recipe app for iPhone Safari, designed to be hosted free on
 
 ## Updating an existing GitHub Pages app
 
-Replace the existing files in your repository with these updated files. The service worker cache name has been updated to `recipe-keeper-v6`, so Safari should refresh the app after the new files are deployed. If the old screen still appears, close the app, reopen the Safari URL, refresh once, then open it from the Home Screen again.
+Replace the existing files in your repository with these updated files. The service worker cache name has been updated to `recipe-keeper-v7`, so Safari should refresh the app after the new files are deployed. If the old screen still appears, close the app, reopen the Safari URL, refresh once, then open it from the Home Screen again.
 
 ## Important backup note
 
